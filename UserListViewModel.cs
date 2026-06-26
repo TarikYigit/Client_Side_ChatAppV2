@@ -23,14 +23,13 @@ namespace Client_Side_ChatApp.ViewModels
         {
             _mainViewModel = mainViewModel;
             ConnectCommand = new RelayCommand(ExecuteConnect, CanExecuteConnect);
-
-            // Mock UI Data (Easily expandable beyond 3 people)
+            //dictionary here
             Users = new ObservableCollection<UserModel>
             {
-                new UserModel { Username = "Alice" },
-                new UserModel { Username = "Bob" },
-                new UserModel { Username = "Charlie" },
-                new UserModel { Username = "David" }
+                new UserModel { Username = "A" },
+                new UserModel { Username = "B" },
+                new UserModel { Username = "C" },
+                new UserModel { Username = "D" }
             };
         }
 
@@ -38,7 +37,7 @@ namespace Client_Side_ChatApp.ViewModels
 
         private void ExecuteConnect(object parameter)
         {
-            // Go to Layer 3
+            // go to VM
             _mainViewModel.CurrentView = new ChatViewModel(_mainViewModel, SelectedUser);
         }
     }

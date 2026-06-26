@@ -23,7 +23,7 @@ namespace Client_Side_ChatApp.ViewModels
         }
 
         private bool CanExecuteLogin(object parameter) => !string.IsNullOrWhiteSpace(UsernameInput);
-        //Take username from view to viewmodel using the Execute Login function
+        //Take username from view to viewmodel 
         private void ExecuteLogin(object parameter)
         {
             _mainViewModel.MyUsername = UsernameInput;

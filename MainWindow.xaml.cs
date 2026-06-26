@@ -36,7 +36,7 @@ namespace ArketelChat
         }
     }
 
-    // --- 2. VIEW MODELS ---
+    //2. VIEW MODELS 
     public class MainViewModel : ObservableObject
     {
         private object _currentViewModel;
@@ -66,7 +66,7 @@ namespace ArketelChat
         }
     }
 
-    // Layer 1: Login
+    //  Login
     public class LoginViewModel : ObservableObject
     {
         private readonly MainViewModel _mainViewModel;
@@ -92,14 +92,14 @@ namespace ArketelChat
         {
             _mainViewModel.LocalUserName = UserName;
 
-            // TODO: Initialize TCP Client here and register the username with the server.
+            // Initialize TCP Client here and register the username with the server
             // _tcpService.ConnectAndRegister(UserName);
 
             _mainViewModel.NavigateToUserSelection();
         }
     }
 
-    // Layer 2: User Selection
+    //User Selection
     public class UserSelectionViewModel : ObservableObject
     {
         private readonly MainViewModel _mainViewModel;
@@ -120,8 +120,7 @@ namespace ArketelChat
         {
             _mainViewModel = mainViewModel;
             StartChatCommand = new RelayCommand(StartChat, CanStartChat);
-
-            // Mock Data - In reality, this list comes from your TCP Server
+            //add dictionary here
             AvailableUsers = new ObservableCollection<string>
             {
                 "Alice",
@@ -139,7 +138,7 @@ namespace ArketelChat
         }
     }
 
-    // Layer 3: Chat Interface
+    //Chat Interface
     public class ChatViewModel : ObservableObject
     {
         private readonly MainViewModel _mainViewModel;
@@ -166,7 +165,7 @@ namespace ArketelChat
             SendMessageCommand = new RelayCommand(SendMessage, CanSendMessage);
             GoBackCommand = new RelayCommand(GoBack);
 
-            // Hook up your TCP listener event here to receive messages
+            // Hook up TCP listener event here 
             // _tcpService.OnMessageReceived += HandleIncomingMessage;
         }
 
@@ -177,7 +176,7 @@ namespace ArketelChat
             string formattedMessage = $"[{_mainViewModel.LocalUserName}]: {CurrentMessage}";
             Messages.Add(formattedMessage);
 
-            // TODO: Send over TCP
+            // Send over TCP
             // _tcpService.SendMessage(ChatPartner, CurrentMessage);
 
             CurrentMessage = string.Empty; // Clear textbox

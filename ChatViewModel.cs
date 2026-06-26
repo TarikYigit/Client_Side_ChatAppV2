@@ -10,7 +10,7 @@ namespace Client_Side_ChatApp.ViewModels
         private MainViewModel _mainViewModel;
         public UserModel TargetUser { get; set; }
 
-        public string HeaderText => $"Chat with {TargetUser.Username}";
+        public string HeaderText => $"Chat with {TargetUser.Username}"; //chat interface header
 
         public ObservableCollection<MessageModel> Messages { get; set; }
 
@@ -24,22 +24,21 @@ namespace Client_Side_ChatApp.ViewModels
         public RelayCommand SendCommand { get; set; }
         public RelayCommand BackCommand { get; set; }
 
-        public ChatViewModel(MainViewModel mainViewModel, UserModel targetUser)
+        public ChatViewModel(MainViewModel mainViewModel, UserModel targetUser) //make the chat with the specific person
         {
             _mainViewModel = mainViewModel;
             TargetUser = targetUser;
             Messages = new ObservableCollection<MessageModel>();
 
-            SendCommand = new RelayCommand(ExecuteSend, CanExecuteSend);
+            SendCommand = new RelayCommand(ExecuteSend, CanExecuteSend);  //if send is clicked, execute send
             BackCommand = new RelayCommand(ExecuteBack);
         }
 
-        private bool CanExecuteSend(object parameter) => !string.IsNullOrWhiteSpace(InputText);
+        private bool CanExecuteSend(object parameter) => !string.IsNullOrWhiteSpace(InputText); //if its not empty
 
         private void ExecuteSend(object parameter)
         {
-            // For pure UI testing, we just dump it straight into the local listbox
-            Messages.Add(new MessageModel
+            Messages.Add(new MessageModel //take out when connecting server
             {
                 Sender = _mainViewModel.MyUsername,
                 Content = InputText
@@ -48,7 +47,7 @@ namespace Client_Side_ChatApp.ViewModels
             InputText = string.Empty;
         }
 
-        private void ExecuteBack(object parameter)
+        private void ExecuteBack(object parameter) //return back to connection page
         {
             // Return to Layer 2
             _mainViewModel.CurrentView = new UserListViewModel(_mainViewModel);
