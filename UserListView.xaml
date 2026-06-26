@@ -1,0 +1,24 @@
+﻿<UserControl x:Class="Client_Side_ChatApp.Views.UserListView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Select a User to Connect To:" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
+
+        <ListBox Grid.Row="1" ItemsSource="{Binding Users}" SelectedItem="{Binding SelectedUser}" FontSize="16">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding Username}" Padding="10"/>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <Button Grid.Row="2" Content="Connect" Command="{Binding ConnectCommand}" 
+                Margin="0,15,0,0" Padding="10" FontSize="16" Background="#28A745" Foreground="White" BorderThickness="0"/>
+    </Grid>
+</UserControl>
