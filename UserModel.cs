@@ -5,5 +5,6 @@ namespace Client_Side_ChatApp.Models
     public class UserModel
     {
         public string Username { get; set; }
+        public byte UserId { get; set; }
     }
 }
