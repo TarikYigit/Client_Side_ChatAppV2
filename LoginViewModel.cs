@@ -1,6 +1,6 @@
 ﻿using Client_Side_ChatApp.Core;
 using System;
-using System.Windows; 
+using System.Windows;
 
 namespace Client_Side_ChatApp.ViewModels
 {
@@ -34,17 +34,36 @@ namespace Client_Side_ChatApp.ViewModels
 
         private void ExecuteLogin(object parameter)
         {
+            string filePath = @"C:\Users\tarik.dalkiran\Desktop\user_ID_file.txt";
+
+            if (System.IO.File.Exists(filePath))
+            {
+                string[] savedUsers = System.IO.File.ReadAllLines(filePath);
+
+                foreach (string line in savedUsers)
+                {
+                    string[] parts = line.Split(" ", StringSplitOptions.RemoveEmptyEntries);
+
+                    // log in as an Existing User
+                    if (parts.Length == 2 && parts[0] == UsernameInput)
+                    {
+                        byte savedId = byte.Parse(parts[1]);
+                        _chatService.ConnectExistingUser(UsernameInput);
+                        return; 
+                    }
+                }
+            }
 
             _chatService.ConnectAndSetUser(UsernameInput, "127.0.0.1");
         }
 
         private void OnLoginSuccessful(byte assignedId)
         {
-  
             Application.Current.Dispatcher.Invoke(() =>
             {
-
                 _mainViewModel.MyUsername = UsernameInput;
+
+                _mainViewModel.MyUserId = assignedId;
 
                 _mainViewModel.CurrentView = new UserListViewModel(_mainViewModel, _chatService);
             });

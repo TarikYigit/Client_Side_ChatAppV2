@@ -1,5 +1,5 @@
 ﻿using System.Collections.ObjectModel;
-using System.Windows; // Required for Application.Current.Dispatcher
+using System.Windows;
 using Client_Side_ChatApp.Core;
 using Client_Side_ChatApp.Models;
 
@@ -8,9 +8,9 @@ namespace Client_Side_ChatApp.ViewModels
     public class ChatViewModel : ObservableObject
     {
         private MainViewModel _mainViewModel;
-
-        // 1. Declare the chat service field
         private TcpChatService _chatService;
+
+        private string _currentChatFilePath;
 
         public UserModel TargetUser { get; set; }
 
@@ -34,6 +34,30 @@ namespace Client_Side_ChatApp.ViewModels
             _chatService = chatService;
             TargetUser = targetUser;
             Messages = new ObservableCollection<MessageModel>();
+
+            // Setup the file paths
+            string folderPath = $@"C:\Users\tarik.dalkiran\Desktop\Workspace\ChatLogs_{_mainViewModel.MyUsername}";
+            _currentChatFilePath = System.IO.Path.Combine(folderPath, $"ChatWith_{TargetUser.UserId}.txt");
+
+            System.IO.Directory.CreateDirectory(folderPath);
+
+            // Load the Hard Drive into RAM
+            if (System.IO.File.Exists(_currentChatFilePath))
+            {
+                string[] savedMessages = System.IO.File.ReadAllLines(_currentChatFilePath);
+                foreach (string line in savedMessages)
+                {
+                    string[] parts = line.Split(new char[] { '|' }, 2);
+                    if (parts.Length == 2)
+                    {
+                        Messages.Add(new MessageModel
+                        {
+                            Sender = parts[0],
+                            Content = parts[1]
+                        });
+                    }
+                }
+            }
 
             SendCommand = new RelayCommand(ExecuteSend, CanExecuteSend);
             BackCommand = new RelayCommand(ExecuteBack);
@@ -60,10 +84,11 @@ namespace Client_Side_ChatApp.ViewModels
         private void ExecuteSend(object parameter)
         {
             _chatService.SendMessage(_mainViewModel.MyUserId, TargetUser.UserId, InputText);
-
+            string fileLine = $"{_mainViewModel.MyUsername}|{InputText}\n";
+            System.IO.File.AppendAllText(_currentChatFilePath, fileLine);
             Messages.Add(new MessageModel
             {
-                Sender = _mainViewModel.MyUsername, // Show our name on the right side
+                Sender = _mainViewModel.MyUsername,
                 Content = InputText
             });
 
@@ -73,7 +98,6 @@ namespace Client_Side_ChatApp.ViewModels
         private void ExecuteBack(object parameter)
         {
             _chatService.MessageReceived -= OnMessageReceived;
-
             _mainViewModel.CurrentView = new UserListViewModel(_mainViewModel, _chatService);
         }
     }
