@@ -62,6 +62,9 @@ namespace Client_Side_ChatApp.ViewModels
             SendCommand = new RelayCommand(ExecuteSend, CanExecuteSend);
             BackCommand = new RelayCommand(ExecuteBack);
             _chatService.MessageReceived += OnMessageReceived;
+
+
+            _chatService.FetchMissedMessages(_mainViewModel.MyUserId);
         }
 
         private void OnMessageReceived(byte senderId, string messageContent)
