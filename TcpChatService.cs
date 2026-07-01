@@ -126,6 +126,7 @@ namespace Client_Side_ChatApp.Core
         {
             NetworkStream stream = _client.GetStream();
             stream.Write(data, 0, data.Length);
+            stream.Flush();
         }
 
         //initiated when case 1 or case 5 happens automatically to set up te client side of the app
@@ -189,8 +190,6 @@ namespace Client_Side_ChatApp.Core
                             {
                                 byte userId = reader.ReadByte();
                                 byte nameLength = reader.ReadByte();
-
-                                // ReadBytes FORCES the client to wait for the exact string length
                                 byte[] nameBuffer = reader.ReadBytes(nameLength);
                                 string username = Encoding.UTF8.GetString(nameBuffer);
 
