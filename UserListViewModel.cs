@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Windows; // Required for Application.Current.Dispatcher
-using Client_Side_ChatApp.Models;
-using Client_Side_ChatApp.Core;
+using ClientSideChatApp.Models;
+using ClientSideChatApp.Core;
 
-namespace Client_Side_ChatApp.ViewModels
+namespace ClientSideChatApp.ViewModels
 {
     public class UserListViewModel : ObservableObject
     {
@@ -66,7 +66,7 @@ namespace Client_Side_ChatApp.ViewModels
 
         private void ExecuteConnect(object parameter)
         {
-            // Go to Chat View, passing the service and the person we want to talk to!
+            // Go to Chat View, passing the service and the person we want to talk to
             _mainViewModel.CurrentView = new ChatViewModel(_mainViewModel, _chatService, SelectedUser);
         }
     }

@@ -1,9 +1,9 @@
 ﻿using System.Collections.ObjectModel;
 using System.Windows;
-using Client_Side_ChatApp.Core;
-using Client_Side_ChatApp.Models;
+using ClientSideChatApp.Core;
+using ClientSideChatApp.Models;
 
-namespace Client_Side_ChatApp.ViewModels
+namespace ClientSideChatApp.ViewModels
 {
     public class ChatViewModel : ObservableObject
     {

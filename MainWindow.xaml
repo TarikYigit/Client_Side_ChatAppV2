@@ -1,8 +1,8 @@
-﻿<Window x:Class="Client_Side_ChatApp.MainWindow"
+﻿<Window x:Class="ClientSideChatApp.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="clr-namespace:Client_Side_ChatApp.ViewModels"
-        xmlns:views="clr-namespace:Client_Side_ChatApp.Views"
+        xmlns:vm="clr-namespace:ClientSideChatApp.ViewModels"
+        xmlns:views="clr-namespace:ClientSideChatApp.Views"
         Title="Client Side Chat App" Height="450" Width="400">
 
     <Window.DataContext>

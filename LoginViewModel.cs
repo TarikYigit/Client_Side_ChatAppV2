@@ -1,8 +1,8 @@
-﻿using Client_Side_ChatApp.Core;
+﻿using ClientSideChatApp.Core;
 using System;
 using System.Windows;
 
-namespace Client_Side_ChatApp.ViewModels
+namespace ClientSideChatApp.ViewModels
 {
     public class LoginViewModel : ObservableObject
     {

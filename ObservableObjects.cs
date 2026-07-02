@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Windows.Input;
-namespace Client_Side_ChatApp.Core
+namespace ClientSideChatApp.Core
 {
     using System.ComponentModel;
     using System.Runtime.CompilerServices;

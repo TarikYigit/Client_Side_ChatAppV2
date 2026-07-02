@@ -12,7 +12,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace Client_Side_ChatApp.Views
+namespace ClientSideChatApp.Views
 {
     using System.Windows.Controls;
 

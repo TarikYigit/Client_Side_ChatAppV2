@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="Client_Side_ChatApp.Views.ChatView"
+﻿<UserControl x:Class="ClientSideChatApp.Views.ChatView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Grid Margin="10">

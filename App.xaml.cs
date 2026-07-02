@@ -2,7 +2,7 @@
 using System.Data;
 using System.Windows;
 
-namespace Client_Side_ChatApp
+namespace ClientSideChatApp
 {
     /// <summary>
     /// Interaction logic for App.xaml
