@@ -1,9 +1,10 @@
-﻿using ClientSideChatApp.Models;
+﻿using ClientSideChatApp.Messages;
+using ClientSideChatApp.Messages;
+using ClientSideChatApp.Models;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,12 +12,14 @@ using System.Windows;
 
 namespace ClientSideChatApp.Core
 {
-    enum MessageId : byte
+    public enum MessageId : byte
     {
-        Authenticate = 1,
-        RequestUserList = 2,
-        ChatMessage = 3,
-        FETCH_OFFLINE_MESSAGES = 6
+        LOG_IN = 1,                 // 0x01 
+        REQUEST_USER_LIST = 2,      // 0x02
+        CHAT_MESSAGE = 3,           // 0x03
+        DISCONNECT = 4,             // 0x04
+        EXISTING_USER_LOG_IN = 5,   // 0x05
+        FETCH_OFFLINE_MESSAGES = 6  // 0x06
     }
 
     public class TcpChatService
@@ -32,14 +35,11 @@ namespace ClientSideChatApp.Core
         public Dictionary<byte, string> AllUsers { get; private set; } = new Dictionary<byte, string>();
         public Dictionary<byte, ObservableCollection<MessageModel>> ChatHistories { get; private set; } = new Dictionary<byte, ObservableCollection<MessageModel>>();
 
-        private void SendRawData(byte[] packet)
+        private void SendPacket(byte messageId, byte[] payload)
         {
-            NetworkStream stream = _client.GetStream();
-
-            byte messageId = packet[0];
-            int payloadLength = packet.Length - 1;
-
+            int payloadLength = payload?.Length ?? 0;
             byte[] finalPacket = new byte[1 + 4 + payloadLength];
+
             finalPacket[0] = messageId;
 
             byte[] lengthBytes = BitConverter.GetBytes(payloadLength);
@@ -47,9 +47,10 @@ namespace ClientSideChatApp.Core
 
             if (payloadLength > 0)
             {
-                Array.Copy(packet, 1, finalPacket, 5, payloadLength);
+                Array.Copy(payload, 0, finalPacket, 5, payloadLength);
             }
 
+            NetworkStream stream = _client.GetStream();
             stream.Write(finalPacket, 0, finalPacket.Length);
             stream.Flush();
         }
@@ -59,13 +60,9 @@ namespace ClientSideChatApp.Core
             _myUsername = username;
             _client = new TcpClient(serverIp, 5000);
 
-            byte[] usernameBytes = Encoding.UTF8.GetBytes(username);
+            LoginRequest request = new LoginRequest(username);
+            SendPacket(request.GetId(), request.ToBytes());
 
-            byte[] packet = new byte[1 + usernameBytes.Length];
-            packet[0] = 0x01; // packet type
-            Array.Copy(usernameBytes, 0, packet, 1, usernameBytes.Length);
-
-            SendRawData(packet);
             Task.Run(() => ListenForPackets());
         }
 
@@ -74,45 +71,34 @@ namespace ClientSideChatApp.Core
             _myUsername = username;
             _client = new TcpClient("127.0.0.1", 5000);
 
-            byte[] usernameBytes = Encoding.UTF8.GetBytes(username);
+            ExistingUserLoginRequest request = new ExistingUserLoginRequest(username);
+            SendPacket(request.GetId(), request.ToBytes());
 
-            byte[] packet = new byte[1 + usernameBytes.Length];
-            packet[0] = 0x05; // packet type
-            Array.Copy(usernameBytes, 0, packet, 1, usernameBytes.Length);
-
-            SendRawData(packet);
             Task.Run(() => ListenForPackets());
         }
 
         public void RequestClientList(byte myUserId)
         {
-            byte[] request_Packet = new byte[] { 0x02, myUserId };
-            SendRawData(request_Packet);
+            SimpleByteRequest request = new SimpleByteRequest((byte)MessageId.REQUEST_USER_LIST, myUserId);
+            SendPacket(request.GetId(), request.ToBytes());
         }
 
         public void SendMessage(byte senderId, byte receiverId, string content)
         {
-            byte[] contentBytes = Encoding.UTF8.GetBytes(content);
-
-            byte[] packet = new byte[3 + contentBytes.Length];
-            packet[0] = 0x03; // packet type
-            packet[1] = senderId;
-            packet[2] = receiverId;
-            Array.Copy(contentBytes, 0, packet, 3, contentBytes.Length);
-
-            SendRawData(packet);
+            ChatMessageRequest request = new ChatMessageRequest(senderId, receiverId, content);
+            SendPacket(request.GetId(), request.ToBytes());
         }
 
         public void FetchMissedMessages(byte myUserId)
         {
-            byte[] request_Packet = new byte[] { (byte)MessageId.FETCH_OFFLINE_MESSAGES, myUserId };
-            SendRawData(request_Packet);
+            SimpleByteRequest request = new SimpleByteRequest((byte)MessageId.FETCH_OFFLINE_MESSAGES, myUserId);
+            SendPacket(request.GetId(), request.ToBytes());
         }
 
         public void Disconnect()
         {
-            byte[] disconnect_Packet = new byte[] { 0x04 };
-            SendRawData(disconnect_Packet);
+            DisconnectRequest request = new DisconnectRequest();
+            SendPacket(request.GetId(), request.ToBytes());
             _client?.Close();
         }
 
@@ -131,7 +117,7 @@ namespace ClientSideChatApp.Core
                     try
                     {
                         packetType = networkReader.ReadByte();
-                        payloadLength = networkReader.ReadInt32(); 
+                        payloadLength = networkReader.ReadInt32();
                     }
                     catch (EndOfStreamException)
                     {
@@ -142,91 +128,35 @@ namespace ClientSideChatApp.Core
 
                     switch ((MessageId)packetType)
                     {
-                        case MessageId.Authenticate:
+                        case MessageId.LOG_IN:
                             {
-                                byte accept_reject = payload[0];
-
-                                if (accept_reject == 0x01)
+                                LoginResponse response = new LoginResponse(payload);
+                                bool flowControl = CheckIfAcceptedAndSaveUserLoginInfoForRepeatedUse(stream, response);
+                                if (!flowControl)
                                 {
-                                    byte assignedUserId = payload[1];
-                                    string user_ID_string = assignedUserId.ToString();
-
-                                    try
-                                    {
-                                        string filePath = @"C:\Users\tarik.dalkiran\Desktop\user_ID_file.txt";
-                                        string fileContent = $"{_myUsername} {user_ID_string}";
-                                        System.IO.File.AppendAllText(filePath, fileContent + "\n");
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        System.Diagnostics.Debug.WriteLine($"[Warning] Could not save credential file: {ex.Message}");
-                                    }
-
-                                    LoginSuccessful?.Invoke(assignedUserId);
-                                }
-                                else // rejected
-                                {
-                                    stream.Close();
-                                    _client.Close();
-                                    LoginRejected?.Invoke();
                                     return;
                                 }
                             }
                             break;
 
-                        case MessageId.RequestUserList:
+                        case MessageId.REQUEST_USER_LIST:
                             {
-                                using (MemoryStream ms = new MemoryStream(payload))
-                                using (BinaryReader payloadReader = new BinaryReader(ms))
-                                {
-                                    byte userCount = payloadReader.ReadByte();
-                                    Dictionary<byte, string> incomingUsers = new Dictionary<byte, string>();
+                                UserListResponse response = new UserListResponse(payload);
 
-                                    for (int i = 0; i < userCount; i++)
-                                    {
-                                        byte userId = payloadReader.ReadByte();
-                                        byte nameLength = payloadReader.ReadByte();
-                                        byte[] nameBuffer = payloadReader.ReadBytes(nameLength);
-                                        string username = Encoding.UTF8.GetString(nameBuffer);
-
-                                        incomingUsers[userId] = username;
-                                    }
-
-                                    AllUsers = incomingUsers;
-                                    UserListUpdated?.Invoke(AllUsers);
-                                }
+                                AllUsers = response.Users;
+                                UserListUpdated?.Invoke(AllUsers);
                             }
                             break;
 
-                        case MessageId.ChatMessage:
+                        case MessageId.CHAT_MESSAGE:
                             {
-                                byte senderId = payload[0];
+                                ChatMessageResponse response = new ChatMessageResponse(payload);
+                                byte senderId;
+                                string message, senderName;
 
-                                byte[] msgBuffer = new byte[payload.Length - 1];
-                                Array.Copy(payload, 1, msgBuffer, 0, msgBuffer.Length);
-                                string message = Encoding.UTF8.GetString(msgBuffer);
+                                SaveMessagesFromOthersOnClientsPC(response, out senderId, out message, out senderName);
 
-                                string senderName = AllUsers.ContainsKey(senderId) ? AllUsers[senderId] : $"User_{senderId}";
-
-                                string folderPath = $@"C:\Users\tarik.dalkiran\Desktop\Workspace\ChatLogs_{_myUsername}";
-                                System.IO.Directory.CreateDirectory(folderPath);
-
-                                string chatFilePath = System.IO.Path.Combine(folderPath, $"ChatWith_{senderId}.txt");
-                                System.IO.File.AppendAllText(chatFilePath, $"{senderName}|{message}\n");
-
-                                Application.Current.Dispatcher.Invoke(() =>
-                                {
-                                    if (!ChatHistories.ContainsKey(senderId))
-                                    {
-                                        ChatHistories[senderId] = new ObservableCollection<MessageModel>();
-                                    }
-
-                                    ChatHistories[senderId].Add(new MessageModel
-                                    {
-                                        Sender = senderName,
-                                        Content = message
-                                    });
-                                });
+                                UpdateUIForClient(senderId, message, senderName);
 
                                 MessageReceived?.Invoke(senderId, message);
                             }
@@ -238,6 +168,66 @@ namespace ClientSideChatApp.Core
             {
                 System.Diagnostics.Debug.WriteLine($"[Network Disconnected]: {ex.Message}");
             }
+        }
+
+        private void UpdateUIForClient(byte senderId, string message, string senderName)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                if (!ChatHistories.ContainsKey(senderId))
+                {
+                    ChatHistories[senderId] = new ObservableCollection<MessageModel>();
+                }
+
+                ChatHistories[senderId].Add(new MessageModel
+                {
+                    Sender = senderName,
+                    Content = message
+                });
+            });
+        }
+
+        private bool CheckIfAcceptedAndSaveUserLoginInfoForRepeatedUse(NetworkStream stream, LoginResponse response)
+        {
+            if (response.IsAccepted)
+            {
+                byte assignedUserId = response.AssignedUserId;
+                string user_ID_string = assignedUserId.ToString();
+
+                try
+                {
+                    string filePath = @"C:\Users\tarik.dalkiran\Desktop\user_ID_file.txt";
+                    string fileContent = $"{_myUsername} {user_ID_string}";
+                    System.IO.File.AppendAllText(filePath, fileContent + "\n");
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[Warning] Could not save credential file: {ex.Message}");
+                }
+
+                LoginSuccessful?.Invoke(assignedUserId);
+            }
+            else
+            {
+                stream.Close();
+                _client.Close();
+                LoginRejected?.Invoke();
+                return false;
+            }
+
+            return true;
+        }
+
+        private void SaveMessagesFromOthersOnClientsPC(ChatMessageResponse response, out byte senderId, out string message, out string senderName)
+        {
+            senderId = response.SenderId;
+            message = response.Message;
+            senderName = AllUsers.ContainsKey(senderId) ? AllUsers[senderId] : $"User_{senderId}";
+            string folderPath = $@"C:\Users\tarik.dalkiran\Desktop\Workspace\ChatLogs_{_myUsername}";
+            System.IO.Directory.CreateDirectory(folderPath);
+
+            string chatFilePath = System.IO.Path.Combine(folderPath, $"ChatWith_{senderId}.txt");
+            System.IO.File.AppendAllText(chatFilePath, $"{senderName}|{message}\n");
         }
     }
 }
