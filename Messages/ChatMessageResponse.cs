@@ -1,28 +1,42 @@
-﻿using System;
+﻿using System.IO;
 using System.Text;
 
 namespace ClientSideChatApp.Messages
 {
     internal class ChatMessageResponse
     {
+
         public byte SenderId { get; private set; }
+
         public string Message { get; private set; }
 
         public ChatMessageResponse(byte[] payload)
         {
-            if (payload != null && payload.Length > 0)
-            {
-                SenderId = payload[0];  //get ID
 
-                if (payload.Length > 1) //get message if it exists
+            if (payload == null || payload.Length == 0) return;
+
+            using (MemoryStream ms = new MemoryStream(payload))
+
+            using (BinaryReader reader = new BinaryReader(ms))
+            {
+
+                SenderId = reader.ReadByte();
+
+                int remainingBytes = (int)(ms.Length - ms.Position);
+
+                if (remainingBytes > 0)
                 {
-                    byte[] msgBuffer = new byte[payload.Length - 1];
-                    Array.Copy(payload, 1, msgBuffer, 0, msgBuffer.Length);
-                    Message = Encoding.UTF8.GetString(msgBuffer);
+
+                    byte[] msgBytes = reader.ReadBytes(remainingBytes);
+
+                    Message = Encoding.UTF8.GetString(msgBytes);
+
                 }
                 else
                 {
+
                     Message = string.Empty;
+
                 }
             }
         }
