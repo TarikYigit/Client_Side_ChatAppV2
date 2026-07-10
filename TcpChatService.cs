@@ -1,4 +1,4 @@
-﻿using ClientSideChatApp.Messages;
+﻿using Client_Side_ChatApp.Messages;
 using ClientSideChatApp.Messages;
 using ClientSideChatApp.Models;
 using System;
@@ -17,17 +17,17 @@ namespace ClientSideChatApp.Core
     public enum MessageId : byte
     {
 
-        LOG_IN = 1,                 // 0x01 
+        REGISTER = 1,                   // 0x01 
 
-        REQUEST_USER_LIST = 2,      // 0x02
+        REQUEST_USER_LIST = 2,          // 0x02
 
-        CHAT_MESSAGE = 3,           // 0x03
+        CHAT_MESSAGE = 3,               // 0x03
 
-        DISCONNECT = 4,             // 0x04
+        DISCONNECT = 4,                 // 0x04
 
-        EXISTING_USER_LOG_IN = 5,   // 0x05
+        LOG_IN = 5,                     // 0x05
 
-        FETCH_OFFLINE_MESSAGES = 6  // 0x06
+        FETCH_OFFLINE_MESSAGES = 6      // 0x06
 
     }
 
@@ -38,13 +38,23 @@ namespace ClientSideChatApp.Core
 
         private string _myUsername;
 
+        private string _myPassword;
+
         public event Action<byte, string> MessageReceived;
 
         public event Action<Dictionary<byte, string>> UserListUpdated;
 
         public event Action<byte> LoginSuccessful;
 
+        public event Action<byte> RegisterSuccessful;
+
+
         public event Action LoginRejected;
+
+        public event Action RegisterRejectedUsername;
+
+        public event Action RegisterRejectedPassword;
+
 
         public Dictionary<byte, string> AllUsers { get; private set; } = new Dictionary<byte, string>();
         public Dictionary<byte, ObservableCollection<MessageModel>> ChatHistories { get; private set; } = new Dictionary<byte, ObservableCollection<MessageModel>>();
@@ -85,14 +95,16 @@ namespace ClientSideChatApp.Core
 
 
 
-        public void ConnectAndSetUser(string username, string serverIp)
+        public void ConnectAndRegister(string username, string password)
         {
 
             _myUsername = username;
 
-            _client = new TcpClient(serverIp, 5000);
+            _myPassword = password;
 
-            LoginRequest request = new LoginRequest(username);
+            _client = new TcpClient("127.0.0.1", 5000);
+
+            UserRegisterRequest request = new UserRegisterRequest(username, password);
 
             SendPacket(request.GetId(), request.ToBytes());
 
@@ -102,14 +114,16 @@ namespace ClientSideChatApp.Core
 
 
 
-        public void ConnectExistingUser(string username)
+        public void ConnectAndLogin(string username, string password)
         {
 
             _myUsername = username;
 
+            _myPassword = password;
+
             _client = new TcpClient("127.0.0.1", 5000);
 
-            ExistingUserLoginRequest request = new ExistingUserLoginRequest(username);
+            UserLoginRequest request = new UserLoginRequest(username, password);
 
             SendPacket(request.GetId(), request.ToBytes());
 
@@ -201,7 +215,7 @@ namespace ClientSideChatApp.Core
 
                                 LoginResponse response = new LoginResponse(payload);
 
-                                bool flowControl = CheckIfAcceptedAndSaveUserLoginInfoForRepeatedUse(stream, response);
+                                bool flowControl = SetupUser(stream, response);
 
                                 if (!flowControl)
                                 {
@@ -239,6 +253,21 @@ namespace ClientSideChatApp.Core
 
                                 MessageReceived?.Invoke(senderId, message);
 
+                            }
+                            break;
+
+                        case MessageId.REGISTER:
+                            {   
+                                UserRegisterResponse response = new UserRegisterResponse(payload);
+
+                                bool flowControl = ReSetupUser(stream, response);
+
+                                if (!flowControl)
+                                {
+
+                                    return;
+
+                                }
                             }
                             break;
                     }
@@ -280,32 +309,13 @@ namespace ClientSideChatApp.Core
 
 
 
-        private bool CheckIfAcceptedAndSaveUserLoginInfoForRepeatedUse(NetworkStream stream, LoginResponse response)
+        private bool SetupUser(NetworkStream stream, LoginResponse response)
         {
 
             if (response.IsAccepted)
             {
 
                 byte assignedUserId = response.AssignedUserId;
-
-                string user_ID_string = assignedUserId.ToString();
-
-                try
-                {
-
-                    string filePath = @"C:\Users\tarik.dalkiran\Desktop\user_ID_file.txt";
-
-                    string fileContent = $"{_myUsername} {user_ID_string}";
-
-                    System.IO.File.AppendAllText(filePath, fileContent + "\n");
-
-                }
-                catch (Exception ex)
-                {
-
-                    System.Diagnostics.Debug.WriteLine($"[Warning] Could not save credential file: {ex.Message}");
-
-                }
 
                 LoginSuccessful?.Invoke(assignedUserId);
 
@@ -324,6 +334,42 @@ namespace ClientSideChatApp.Core
             }
 
             return true;
+        }
+
+        private bool ReSetupUser(NetworkStream stream, UserRegisterResponse response)
+        {
+            if (response.IsAccepted)
+            {
+
+                byte assignedUserId = response.AssignedUserId;
+
+                LoginSuccessful?.Invoke(assignedUserId);
+
+                return true;
+
+            }
+            else
+            {
+
+                stream.Close();
+
+                _client.Close();
+
+                if (response.IsPasswordWeak)
+                {
+
+                    RegisterRejectedPassword?.Invoke();
+
+                }
+                else
+                {
+
+                    RegisterRejectedUsername?.Invoke();
+
+                }
+
+                return false;
+            }
         }
 
 

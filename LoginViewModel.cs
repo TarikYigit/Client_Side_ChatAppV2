@@ -23,7 +23,18 @@ namespace ClientSideChatApp.ViewModels
 
         }
 
+        private string _passwordInput;
+        public string PasswordInput
+        {
+
+            get { return _passwordInput; }
+
+            set { _passwordInput = value; OnPropertyChanged(); }
+
+        }
         public RelayCommand LoginCommand { get; set; }
+
+        public RelayCommand RegisterCommand { get; set; }
 
         public LoginViewModel(MainViewModel mainViewModel, TcpChatService chatService)
         {
@@ -32,47 +43,37 @@ namespace ClientSideChatApp.ViewModels
 
             _chatService = chatService;
 
-            // Subscribe to the network events
             _chatService.LoginSuccessful += OnLoginSuccessful;
 
             _chatService.LoginRejected += OnLoginRejected;
 
-            LoginCommand = new RelayCommand(ExecuteLogin, CanExecuteLogin);
+            _chatService.RegisterRejectedPassword += OnRegisterRejectedPassword;
+
+            _chatService.RegisterRejectedUsername += OnRegisterRejectedPassword;
+
+
+            LoginCommand = new RelayCommand(ExecuteLogin, CanExecuteAuth);
+
+            RegisterCommand = new RelayCommand(ExecuteRegister, CanExecuteAuth);
+
 
         }
 
-        private bool CanExecuteLogin(object parameter) => !string.IsNullOrWhiteSpace(UsernameInput);
+        private bool CanExecuteAuth(object parameter) => !string.IsNullOrWhiteSpace(UsernameInput) && !string.IsNullOrWhiteSpace(PasswordInput);
 
         private void ExecuteLogin(object parameter)
         {
 
-            string filePath = @"C:\Users\tarik.dalkiran\Desktop\user_ID_file.txt";
+            _chatService.ConnectAndLogin(UsernameInput, PasswordInput);
 
-            if (System.IO.File.Exists(filePath))
-            {
+        }
 
-                string[] savedUsers = System.IO.File.ReadAllLines(filePath);
+        private void ExecuteRegister(object parameter) 
+        {
 
-                foreach (string line in savedUsers)
-                {
+            _chatService.ConnectAndRegister(UsernameInput, PasswordInput);
 
-                    string[] parts = line.Split(" ", StringSplitOptions.RemoveEmptyEntries);
 
-                    // log in as an Existing User
-                    if (parts.Length == 2 && parts[0] == UsernameInput)
-                    {
-
-                        byte savedId = byte.Parse(parts[1]);
-
-                        _chatService.ConnectExistingUser(UsernameInput);
-
-                        return; 
-
-                    }
-                }
-            }
-
-            _chatService.ConnectAndSetUser(UsernameInput, "127.0.0.1");
         }
 
         private void OnLoginSuccessful(byte assignedId)
@@ -96,7 +97,29 @@ namespace ClientSideChatApp.ViewModels
             Application.Current.Dispatcher.Invoke(() =>
             {
 
-                MessageBox.Show("Login rejected by server. Username might be taken.", "Error");
+                MessageBox.Show("Login rejected by server. Username or Password is incorrect", "Error");
+
+            });
+        }
+
+        private void OnRegisterRejectedPassword()
+        {
+
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+
+                MessageBox.Show("Register rejected by server. Password too weak.", "Error");
+
+            });
+        }
+
+        private void OnRegisterRejectedUsername()
+        {
+
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+
+                MessageBox.Show("Register rejected by server. Username Taken.", "Error");
 
             });
         }

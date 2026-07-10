@@ -29,6 +29,8 @@ namespace ClientSideChatApp.Messages
                     AssignedUserId = reader.ReadByte();
 
                 }
+
+
             }
         }
     }
