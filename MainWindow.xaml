@@ -4,7 +4,7 @@
         xmlns:vm="clr-namespace:ClientSideChatApp.ViewModels"
         xmlns:views="clr-namespace:ClientSideChatApp.Views"
         Title="Client Side Chat App" Height="450" Width="400">
-
+        
     <Window.DataContext>
         <vm:MainViewModel/>
     </Window.DataContext>
