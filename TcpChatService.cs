@@ -376,14 +376,13 @@ namespace ClientSideChatApp.Core
 
         private void SaveMessagesFromOthersOnClientsPC(ChatMessageResponse response, out byte senderId, out string message, out string senderName)
         {
-
             senderId = response.SenderId;
 
-            message = response.Message;
+            message = EncryptionManager.DecryptMessage(response.Message);
 
             senderName = AllUsers.ContainsKey(senderId) ? AllUsers[senderId] : $"User_{senderId}";
 
-            string folderPath = $@"C:\Users\tarik.dalkiran\Desktop\Workspace\ChatLogs_{_myUsername}";
+            string folderPath = $@"D:\ChatAppArke\ChatLogs_{_myUsername}";
 
             System.IO.Directory.CreateDirectory(folderPath);
 

@@ -46,7 +46,7 @@ namespace ClientSideChatApp.ViewModels
             Messages = new ObservableCollection<MessageModel>();
 
             // Setup the file paths
-            string folderPath = $@"C:\Users\tarik.dalkiran\Desktop\Workspace\ChatLogs_{_mainViewModel.MyUsername}";
+            string folderPath = $@"D:\ChatAppArke\ChatLogs_{_mainViewModel.MyUsername}";
 
             _currentChatFilePath = System.IO.Path.Combine(folderPath, $"ChatWith_{TargetUser.UserId}.txt");
 
@@ -113,7 +113,9 @@ namespace ClientSideChatApp.ViewModels
         private void ExecuteSend(object parameter)
         {
 
-            _chatService.SendMessage(_mainViewModel.MyUserId, TargetUser.UserId, InputText);
+            string cipherText = EncryptionManager.EncryptMessage(InputText);
+
+            _chatService.SendMessage(_mainViewModel.MyUserId, TargetUser.UserId, cipherText);
 
             string fileLine = $"{_mainViewModel.MyUsername}|{InputText}\n";
 
@@ -129,7 +131,6 @@ namespace ClientSideChatApp.ViewModels
             });
 
             InputText = string.Empty;
-
         }
 
         private void ExecuteBack(object parameter)
