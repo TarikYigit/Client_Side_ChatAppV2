@@ -46,7 +46,7 @@ namespace ClientSideChatApp.ViewModels
             Messages = new ObservableCollection<MessageModel>();
 
             // Setup the file paths
-            string folderPath = $@"D:\ChatAppArke\ChatLogs_{_mainViewModel.MyUsername}";
+            string folderPath = $@"C:\Users\tarik.dalkiran\Desktop\Workspace\ChatLogs_{_mainViewModel.MyUsername}";
 
             _currentChatFilePath = System.IO.Path.Combine(folderPath, $"ChatWith_{TargetUser.UserId}.txt");
 

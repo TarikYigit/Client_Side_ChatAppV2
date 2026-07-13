@@ -4,7 +4,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 
-namespace ArketelChat
+namespace Client_Side_ChatApp
 {
     public class ObservableObject : INotifyPropertyChanged
     {

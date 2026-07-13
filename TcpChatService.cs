@@ -382,7 +382,7 @@ namespace ClientSideChatApp.Core
 
             senderName = AllUsers.ContainsKey(senderId) ? AllUsers[senderId] : $"User_{senderId}";
 
-            string folderPath = $@"D:\ChatAppArke\ChatLogs_{_myUsername}";
+            string folderPath = $@"C:\Users\tarik.dalkiran\Desktop\Workspace\ChatLogs_{_myUsername}";
 
             System.IO.Directory.CreateDirectory(folderPath);
 
