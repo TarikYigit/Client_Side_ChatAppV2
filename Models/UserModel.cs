@@ -8,5 +8,6 @@ namespace ClientSideChatApp.Models
         public string Username { get; set; }
         public byte UserId { get; set; }
 
+        public bool IsOnline { get; set; }
     }
 }

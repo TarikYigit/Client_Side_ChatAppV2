@@ -54,27 +54,18 @@ namespace ClientSideChatApp.ViewModels
 
         }
 
-        private void OnUserListUpdated(Dictionary<byte, string> updatedUsers)
+        private void OnUserListUpdated(List<UserModel> updatedUsers)
         {
-
             Application.Current.Dispatcher.Invoke(() =>
             {
+                Users.Clear(); 
 
-                Users.Clear(); // Wipe the old list clean
-
-                foreach (var kvp in updatedUsers)
+                foreach (UserModel user in updatedUsers)
                 {
 
-                    if (kvp.Key == _mainViewModel.MyUserId) continue;
+                    if (user.UserId == _mainViewModel.MyUserId) continue;
 
-                    Users.Add(new UserModel
-                    {
-
-                        UserId = kvp.Key,
-
-                        Username = kvp.Value
-
-                    });
+                    Users.Add(user);
                 }
             });
         }
@@ -85,7 +76,7 @@ namespace ClientSideChatApp.ViewModels
 
         private void ExecuteConnect(object parameter)
         {
-            // Go to Chat View, passing the service and the person we want to talk to
+
             _mainViewModel.CurrentView = new ChatViewModel(_mainViewModel, _chatService, SelectedUser);
 
         }

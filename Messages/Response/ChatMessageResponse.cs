@@ -1,31 +1,31 @@
-﻿using System.IO;
+﻿using System; // Required for DateTime!
+using System.IO;
 using System.Text;
 
 namespace ClientSideChatApp.Messages
 {
     internal class ChatMessageResponse
     {
-
         public byte SenderId { get; private set; }
 
-        public DateTime actualMessageTime { get; private set; }
+        public DateTime TimeStamp { get; private set; } 
 
         public string Message { get; private set; }
 
         public ChatMessageResponse(byte[] payload)
         {
-
             if (payload == null || payload.Length == 0) return;
 
             using (MemoryStream ms = new MemoryStream(payload))
 
             using (BinaryReader reader = new BinaryReader(ms))
             {
+
                 SenderId = reader.ReadByte();
 
                 long ticks = reader.ReadInt64();
 
-                actualMessageTime = new DateTime(ticks);
+                TimeStamp = new DateTime(ticks);
 
                 int remainingBytes = (int)(ms.Length - ms.Position);
 
@@ -37,12 +37,9 @@ namespace ClientSideChatApp.Messages
                     Message = Encoding.UTF8.GetString(msgBytes);
 
                 }
-
                 else
                 {
-
                     Message = string.Empty;
-
                 }
             }
         }

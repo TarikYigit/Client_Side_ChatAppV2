@@ -42,7 +42,8 @@ namespace ClientSideChatApp.Core
 
         public event Action<byte, string, string> MessageReceived;
 
-        public event Action<Dictionary<byte, string>> UserListUpdated;
+        public event Action<List<UserModel>> UserListUpdated;
+        public List<UserModel> AllUsers { get; private set; } = new List<UserModel>();
 
         public event Action<byte> LoginSuccessful;
 
@@ -55,8 +56,6 @@ namespace ClientSideChatApp.Core
 
         public event Action RegisterRejectedPassword;
 
-
-        public Dictionary<byte, string> AllUsers { get; private set; } = new Dictionary<byte, string>();
         public Dictionary<byte, ObservableCollection<MessageModel>>  ChatHistories { get; private set; } = new Dictionary<byte, ObservableCollection<MessageModel>>();
 
 
@@ -233,7 +232,7 @@ namespace ClientSideChatApp.Core
 
                                 AllUsers = response.Users;
 
-                                UserListUpdated?.Invoke(AllUsers);
+                                UserListUpdated?.Invoke(AllUsers); 
 
                             }
                             break;
@@ -380,18 +379,17 @@ namespace ClientSideChatApp.Core
 
 
 
-        private void SaveMessagesFromOthersOnClientsPC(ChatMessageResponse response, out byte senderId, out string message, out string senderName, out string timeString)
+        private void SaveMessagesFromOthersOnClientsPC(ChatMessageResponse response, byte senderId, out string message, out string senderName, out string timeString)
         {
-
             senderId = response.SenderId;
-
-            
 
             message = EncryptionManager.DecryptMessage(response.Message);
 
-            senderName = AllUsers.ContainsKey(senderId) ? AllUsers[senderId] : $"User_{senderId}";
+            timeString = response.TimeStamp.ToLocalTime().ToString("yyyy:MM:dd:HH:mm:ss");
 
-            timeString = response.actualMessageTime.ToString("yyyy:MM:dd:HH:mm:ss");
+            UserModel sender = AllUsers.Find(u => u.UserId == senderId);
+
+            senderName = sender != null ? sender.Username : $"User_{senderId}";
 
             string folderPath = $@"C:\Users\tarik.dalkiran\Desktop\Workspace\ChatLogs_{_myUsername}";
 
@@ -400,7 +398,6 @@ namespace ClientSideChatApp.Core
             string chatFilePath = System.IO.Path.Combine(folderPath, $"ChatWith_{senderId}.txt");
 
             System.IO.File.AppendAllText(chatFilePath, $"{senderName}|{timeString}|{message}\n");
-
         }
     }
 }
