@@ -8,6 +8,8 @@ namespace ClientSideChatApp.Messages
 
         public byte SenderId { get; private set; }
 
+        public DateTime actualMessageTime { get; private set; }
+
         public string Message { get; private set; }
 
         public ChatMessageResponse(byte[] payload)
@@ -19,8 +21,11 @@ namespace ClientSideChatApp.Messages
 
             using (BinaryReader reader = new BinaryReader(ms))
             {
-
                 SenderId = reader.ReadByte();
+
+                long ticks = reader.ReadInt64();
+
+                actualMessageTime = new DateTime(ticks);
 
                 int remainingBytes = (int)(ms.Length - ms.Position);
 
@@ -32,6 +37,7 @@ namespace ClientSideChatApp.Messages
                     Message = Encoding.UTF8.GetString(msgBytes);
 
                 }
+
                 else
                 {
 

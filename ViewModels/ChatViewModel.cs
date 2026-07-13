@@ -45,14 +45,12 @@ namespace ClientSideChatApp.ViewModels
 
             Messages = new ObservableCollection<MessageModel>();
 
-            // Setup the file paths
             string folderPath = $@"C:\Users\tarik.dalkiran\Desktop\Workspace\ChatLogs_{_mainViewModel.MyUsername}";
 
             _currentChatFilePath = System.IO.Path.Combine(folderPath, $"ChatWith_{TargetUser.UserId}.txt");
 
             System.IO.Directory.CreateDirectory(folderPath);
 
-            // Load the Hard Drive into RAM
             if (System.IO.File.Exists(_currentChatFilePath))
             {
 
@@ -61,9 +59,9 @@ namespace ClientSideChatApp.ViewModels
                 foreach (string line in savedMessages)
                 {
 
-                    string[] parts = line.Split(new char[] { '|' }, 2);
+                    string[] parts = line.Split(new char[] { '|' }, 3);
 
-                    if (parts.Length == 2)
+                    if (parts.Length == 3)
                     {
 
                         Messages.Add(new MessageModel
@@ -71,7 +69,9 @@ namespace ClientSideChatApp.ViewModels
 
                             Sender = parts[0],
 
-                            Content = parts[1]
+                            Timestamp = parts[1], 
+
+                            Content = parts[2]  
 
                         });
                     }
@@ -88,7 +88,7 @@ namespace ClientSideChatApp.ViewModels
 
         }
 
-        private void OnMessageReceived(byte senderId, string messageContent)
+        private void OnMessageReceived(byte senderId, string messageContent, string timeString)
         {
 
             if (senderId == TargetUser.UserId)
@@ -101,6 +101,9 @@ namespace ClientSideChatApp.ViewModels
                     {
 
                         Sender = TargetUser.Username,
+
+                        Timestamp = timeString, 
+
                         Content = messageContent
 
                     });
@@ -117,7 +120,9 @@ namespace ClientSideChatApp.ViewModels
 
             _chatService.SendMessage(_mainViewModel.MyUserId, TargetUser.UserId, cipherText);
 
-            string fileLine = $"{_mainViewModel.MyUsername}|{InputText}\n";
+            string currentTime = DateTime.Now.ToString("yyyy:MM:dd:HH:mm:ss");
+
+            string fileLine = $"{_mainViewModel.MyUsername}|{currentTime}|{InputText}\n";
 
             System.IO.File.AppendAllText(_currentChatFilePath, fileLine);
 
@@ -126,9 +131,13 @@ namespace ClientSideChatApp.ViewModels
 
                 Sender = _mainViewModel.MyUsername,
 
+                Timestamp = currentTime,
+
                 Content = InputText
 
-            });
+            }
+
+            );
 
             InputText = string.Empty;
         }

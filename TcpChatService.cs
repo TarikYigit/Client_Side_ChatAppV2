@@ -40,7 +40,7 @@ namespace ClientSideChatApp.Core
 
         private string _myPassword;
 
-        public event Action<byte, string> MessageReceived;
+        public event Action<byte, string, string> MessageReceived;
 
         public event Action<Dictionary<byte, string>> UserListUpdated;
 
@@ -57,7 +57,7 @@ namespace ClientSideChatApp.Core
 
 
         public Dictionary<byte, string> AllUsers { get; private set; } = new Dictionary<byte, string>();
-        public Dictionary<byte, ObservableCollection<MessageModel>> ChatHistories { get; private set; } = new Dictionary<byte, ObservableCollection<MessageModel>>();
+        public Dictionary<byte, ObservableCollection<MessageModel>>  ChatHistories { get; private set; } = new Dictionary<byte, ObservableCollection<MessageModel>>();
 
 
 
@@ -247,11 +247,13 @@ namespace ClientSideChatApp.Core
 
                                 string message, senderName;
 
-                                SaveMessagesFromOthersOnClientsPC(response, out senderId, out message, out senderName);
+                                string timeString;
 
-                                UpdateUIForClient(senderId, message, senderName);
+                                SaveMessagesFromOthersOnClientsPC(response, out senderId, out message, out senderName, out timeString);
 
-                                MessageReceived?.Invoke(senderId, message);
+                                UpdateUIForClient(senderId, message, senderName, timeString);
+
+                                MessageReceived?.Invoke(senderId, message, timeString);
 
                             }
                             break;
@@ -283,7 +285,7 @@ namespace ClientSideChatApp.Core
 
 
 
-        private void UpdateUIForClient(byte senderId, string message, string senderName)
+        private void UpdateUIForClient(byte senderId, string message, string senderName, string timeString)
         {
 
             Application.Current.Dispatcher.Invoke(() =>
@@ -300,6 +302,8 @@ namespace ClientSideChatApp.Core
                 {
 
                     Sender = senderName,
+
+                    Timestamp = timeString,
 
                     Content = message
 
@@ -338,6 +342,7 @@ namespace ClientSideChatApp.Core
 
         private bool ReSetupUser(NetworkStream stream, UserRegisterResponse response)
         {
+
             if (response.IsAccepted)
             {
 
@@ -369,18 +374,24 @@ namespace ClientSideChatApp.Core
                 }
 
                 return false;
+
             }
         }
 
 
 
-        private void SaveMessagesFromOthersOnClientsPC(ChatMessageResponse response, out byte senderId, out string message, out string senderName)
+        private void SaveMessagesFromOthersOnClientsPC(ChatMessageResponse response, out byte senderId, out string message, out string senderName, out string timeString)
         {
+
             senderId = response.SenderId;
+
+            
 
             message = EncryptionManager.DecryptMessage(response.Message);
 
             senderName = AllUsers.ContainsKey(senderId) ? AllUsers[senderId] : $"User_{senderId}";
+
+            timeString = response.actualMessageTime.ToString("yyyy:MM:dd:HH:mm:ss");
 
             string folderPath = $@"C:\Users\tarik.dalkiran\Desktop\Workspace\ChatLogs_{_myUsername}";
 
@@ -388,7 +399,7 @@ namespace ClientSideChatApp.Core
 
             string chatFilePath = System.IO.Path.Combine(folderPath, $"ChatWith_{senderId}.txt");
 
-            System.IO.File.AppendAllText(chatFilePath, $"{senderName}|{message}\n");
+            System.IO.File.AppendAllText(chatFilePath, $"{senderName}|{timeString}|{message}\n");
 
         }
     }
