@@ -239,15 +239,21 @@ namespace ClientSideChatApp.Core
 
                         case MessageId.CHAT_MESSAGE:
                             {
+
                                 ChatMessageResponse response = new ChatMessageResponse(payload);
+
                                 byte senderId;
-                                string message, senderName, timeString; 
+
+                                string message, senderName;
+
+                                string timeString;
 
                                 SaveMessagesFromOthersOnClientsPC(response, out senderId, out message, out senderName, out timeString);
 
                                 UpdateUIForClient(senderId, message, senderName, timeString);
 
                                 MessageReceived?.Invoke(senderId, message, timeString);
+
                             }
                             break;
 
@@ -278,7 +284,7 @@ namespace ClientSideChatApp.Core
 
 
 
-        private void UpdateUIForClient(byte senderId, string message, string senderName)
+        private void UpdateUIForClient(byte senderId, string message, string senderName, string timeString)
         {
 
             Application.Current.Dispatcher.Invoke(() =>
@@ -295,6 +301,8 @@ namespace ClientSideChatApp.Core
                 {
 
                     Sender = senderName,
+
+                    Timestamp = timeString,
 
                     Content = message
 

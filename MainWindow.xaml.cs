@@ -16,7 +16,13 @@ namespace Client_Side_ChatApp
 
         }
     }
+    // IUsers ve IConnections ve Stream 
+    // Online-ofline --> Chat mesajlarına zaman --> Chat ekranında zaman gözüksün --> 
+    // Önce multi message
 
+    // Oda sonra
+    // Oda chatlarine mesaj atalım herkese gitsin offline ise girince oda da mesaj var görsün.
+    // Login olduğu zaman oda listesi
     public class RelayCommand : ICommand
     {
 
@@ -30,6 +36,7 @@ namespace Client_Side_ChatApp
             _execute = execute ?? throw new ArgumentNullException(nameof(execute));
 
             _canExecute = canExecute;
+
 
         }
 
@@ -236,7 +243,7 @@ namespace Client_Side_ChatApp
 
             Messages.Add(formattedMessage);
 
-            CurrentMessage = string.Empty; 
+            CurrentMessage = string.Empty;
 
         }
 
