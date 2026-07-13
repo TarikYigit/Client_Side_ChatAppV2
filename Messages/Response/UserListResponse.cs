@@ -1,12 +1,13 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using ClientSideChatApp.Models; 
 
 namespace ClientSideChatApp.Messages
 {
     internal class UserListResponse
     {
-        public Dictionary<byte, string> Users { get; private set; } = new Dictionary<byte, string>();
+        public List<UserModel> Users { get; private set; } = new List<UserModel>();
 
         public UserListResponse(byte[] payload)
         {
@@ -24,14 +25,24 @@ namespace ClientSideChatApp.Messages
 
                     byte userId = payloadReader.ReadByte();
 
+                    bool isOnline = payloadReader.ReadBoolean();
+
                     byte nameLength = payloadReader.ReadByte();
 
                     byte[] nameBuffer = payloadReader.ReadBytes(nameLength);
 
                     string username = Encoding.UTF8.GetString(nameBuffer);
 
-                    Users[userId] = username;
+                    Users.Add(new UserModel
+                    {
 
+                        UserId = userId,
+
+                        Username = username,
+
+                        IsOnline = isOnline
+
+                    });
                 }
             }
         }

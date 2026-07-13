@@ -42,8 +42,6 @@ namespace ClientSideChatApp.Core
 
         public event Action<byte, string> MessageReceived;
 
-        public event Action<Dictionary<byte, string>> UserListUpdated;
-
         public event Action<byte> LoginSuccessful;
 
         public event Action<byte> RegisterSuccessful;
@@ -56,7 +54,8 @@ namespace ClientSideChatApp.Core
         public event Action RegisterRejectedPassword;
 
 
-        public Dictionary<byte, string> AllUsers { get; private set; } = new Dictionary<byte, string>();
+        public event Action<List<UserModel>> UserListUpdated;
+        public List<UserModel> AllUsers { get; private set; } = new List<UserModel>();
         public Dictionary<byte, ObservableCollection<MessageModel>> ChatHistories { get; private set; } = new Dictionary<byte, ObservableCollection<MessageModel>>();
 
 
@@ -233,26 +232,22 @@ namespace ClientSideChatApp.Core
 
                                 AllUsers = response.Users;
 
-                                UserListUpdated?.Invoke(AllUsers);
+                                UserListUpdated?.Invoke(AllUsers); 
 
                             }
                             break;
 
                         case MessageId.CHAT_MESSAGE:
                             {
-
                                 ChatMessageResponse response = new ChatMessageResponse(payload);
-
                                 byte senderId;
+                                string message, senderName, timeString; 
 
-                                string message, senderName;
+                                SaveMessagesFromOthersOnClientsPC(response, out senderId, out message, out senderName, out timeString);
 
-                                SaveMessagesFromOthersOnClientsPC(response, out senderId, out message, out senderName);
+                                UpdateUIForClient(senderId, message, senderName, timeString);
 
-                                UpdateUIForClient(senderId, message, senderName);
-
-                                MessageReceived?.Invoke(senderId, message);
-
+                                MessageReceived?.Invoke(senderId, message, timeString);
                             }
                             break;
 
@@ -374,13 +369,18 @@ namespace ClientSideChatApp.Core
 
 
 
-        private void SaveMessagesFromOthersOnClientsPC(ChatMessageResponse response, out byte senderId, out string message, out string senderName)
+        private void SaveMessagesFromOthersOnClientsPC(ChatMessageResponse response, out byte senderId, out string message, out string senderName, out string timeString)
         {
+
             senderId = response.SenderId;
 
             message = EncryptionManager.DecryptMessage(response.Message);
 
-            senderName = AllUsers.ContainsKey(senderId) ? AllUsers[senderId] : $"User_{senderId}";
+            timeString = response.Timestamp; 
+
+            UserModel sender = AllUsers.Find(u => u.UserId == senderId);
+
+            senderName = sender != null ? sender.Username : $"User_{senderId}";
 
             string folderPath = $@"C:\Users\tarik.dalkiran\Desktop\Workspace\ChatLogs_{_myUsername}";
 
@@ -388,7 +388,7 @@ namespace ClientSideChatApp.Core
 
             string chatFilePath = System.IO.Path.Combine(folderPath, $"ChatWith_{senderId}.txt");
 
-            System.IO.File.AppendAllText(chatFilePath, $"{senderName}|{message}\n");
+            System.IO.File.AppendAllText(chatFilePath, $"{senderName}|{timeString}|{message}\n");
 
         }
     }
