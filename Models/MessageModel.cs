@@ -1,5 +1,4 @@
-﻿//Main class used for storing message info
-namespace ClientSideChatApp.Models
+﻿namespace ClientSideChatApp.Models
 {
 
     public class MessageModel

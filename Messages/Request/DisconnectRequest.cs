@@ -1,6 +1,4 @@
-﻿using ClientSideChatApp.Core;
-
-namespace ClientSideChatApp.Messages
+﻿namespace ClientSideChatApp.Messages
 {
 
     internal class DisconnectRequest

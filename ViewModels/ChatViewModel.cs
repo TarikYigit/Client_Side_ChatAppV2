@@ -14,13 +14,23 @@ namespace ClientSideChatApp.ViewModels
         private string _currentChatFilePath;
 
         public UserModel TargetUser { get; set; }
+        public GroupModel TargetGroup { get; set; }
 
-        public string HeaderText => $"Chat with {TargetUser.Username}";
+        public string HeaderText
+        {
+            get
+            {
+
+                if (TargetGroup != null) return $"Group Chat: {TargetGroup.GroupName}";
+
+                return TargetUser != null ? $"Chat with {TargetUser.Username}" : "Chat";
+
+            }
+        }
 
         public ObservableCollection<MessageModel> Messages { get; set; }
 
         private string _inputText;
-
         public string InputText
         {
 
@@ -31,8 +41,8 @@ namespace ClientSideChatApp.ViewModels
         }
 
         public RelayCommand SendCommand { get; set; }
-
         public RelayCommand BackCommand { get; set; }
+
 
         public ChatViewModel(MainViewModel mainViewModel, TcpChatService chatService, UserModel targetUser)
         {
@@ -43,16 +53,59 @@ namespace ClientSideChatApp.ViewModels
 
             TargetUser = targetUser;
 
+            InitializeChat();
+        }
+
+
+        public ChatViewModel(MainViewModel mainViewModel, TcpChatService chatService, GroupModel targetGroup)
+        {
+
+            _mainViewModel = mainViewModel;
+
+            _chatService = chatService;
+
+            TargetGroup = targetGroup;
+
+            InitializeChat();
+        }
+
+
+        private void InitializeChat()
+        {
             Messages = new ObservableCollection<MessageModel>();
 
-            // Setup the file paths
             string folderPath = $@"C:\Users\tarik.dalkiran\Desktop\Workspace\ChatLogs_{_mainViewModel.MyUsername}";
-
-            _currentChatFilePath = System.IO.Path.Combine(folderPath, $"ChatWith_{TargetUser.UserId}.txt");
 
             System.IO.Directory.CreateDirectory(folderPath);
 
-            // Load the Hard Drive into RAM
+            if (TargetGroup != null)
+            {
+
+                _currentChatFilePath = System.IO.Path.Combine(folderPath, $"GroupChat_{TargetGroup.GroupId}.txt");
+
+            }
+            else if (TargetUser != null)
+            {
+
+                _currentChatFilePath = System.IO.Path.Combine(folderPath, $"ChatWith_{TargetUser.UserId}.txt");
+
+            }
+
+            LoadChatHistory();
+
+            SendCommand = new RelayCommand(ExecuteSend, CanExecuteSend);
+
+            BackCommand = new RelayCommand(ExecuteBack);
+
+            _chatService.MessageReceived += OnMessageReceived;
+
+            _chatService.GroupMessageReceived += OnGroupMessageReceived; 
+
+            _chatService.FetchMissedMessages(_mainViewModel.MyUserId);
+        }
+
+        private void LoadChatHistory()
+        {
             if (System.IO.File.Exists(_currentChatFilePath))
             {
 
@@ -61,9 +114,9 @@ namespace ClientSideChatApp.ViewModels
                 foreach (string line in savedMessages)
                 {
 
-                    string[] parts = line.Split(new char[] { '|' }, 2);
+                    string[] parts = line.Split(new char[] { '|' }, 3);
 
-                    if (parts.Length == 2)
+                    if (parts.Length == 3)
                     {
 
                         Messages.Add(new MessageModel
@@ -71,27 +124,20 @@ namespace ClientSideChatApp.ViewModels
 
                             Sender = parts[0],
 
-                            Content = parts[1]
+                            Timestamp = parts[1],
+
+                            Content = parts[2]
 
                         });
                     }
                 }
             }
-
-            SendCommand = new RelayCommand(ExecuteSend, CanExecuteSend);
-
-            BackCommand = new RelayCommand(ExecuteBack);
-
-            _chatService.MessageReceived += OnMessageReceived;
-
-            _chatService.FetchMissedMessages(_mainViewModel.MyUserId);
-
         }
 
-        private void OnMessageReceived(byte senderId, string messageContent)
+        private void OnMessageReceived(byte senderId, string messageContent, string timeString)
         {
 
-            if (senderId == TargetUser.UserId)
+            if (TargetUser != null && senderId == TargetUser.UserId)
             {
 
                 Application.Current.Dispatcher.Invoke(() =>
@@ -101,6 +147,29 @@ namespace ClientSideChatApp.ViewModels
                     {
 
                         Sender = TargetUser.Username,
+
+                        Timestamp = timeString,
+
+                        Content = messageContent
+
+                    });
+                });
+            }
+        }
+
+        private void OnGroupMessageReceived(byte groupId, string senderName, string messageContent, string timeString)
+        {
+            if (TargetGroup != null && groupId == TargetGroup.GroupId)
+            {
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    Messages.Add(new MessageModel
+                    {
+
+                        Sender = senderName,
+
+                        Timestamp = timeString,
+
                         Content = messageContent
 
                     });
@@ -115,9 +184,22 @@ namespace ClientSideChatApp.ViewModels
 
             string cipherText = EncryptionManager.EncryptMessage(InputText);
 
-            _chatService.SendMessage(_mainViewModel.MyUserId, TargetUser.UserId, cipherText);
+            string currentTime = DateTime.Now.ToString("yyyy:MM:dd:HH:mm:ss");
 
-            string fileLine = $"{_mainViewModel.MyUsername}|{InputText}\n";
+            if (TargetGroup != null)
+            {
+
+                _chatService.SendGroupMessage(_mainViewModel.MyUserId, (byte)TargetGroup.GroupId, cipherText);
+
+            }
+            else if (TargetUser != null)
+            {
+
+                _chatService.SendMessage(_mainViewModel.MyUserId, TargetUser.UserId, cipherText);
+
+            }
+
+            string fileLine = $"{_mainViewModel.MyUsername}|{currentTime}|{InputText}\n";
 
             System.IO.File.AppendAllText(_currentChatFilePath, fileLine);
 
@@ -125,6 +207,8 @@ namespace ClientSideChatApp.ViewModels
             {
 
                 Sender = _mainViewModel.MyUsername,
+
+                Timestamp = currentTime,
 
                 Content = InputText
 
@@ -137,6 +221,8 @@ namespace ClientSideChatApp.ViewModels
         {
 
             _chatService.MessageReceived -= OnMessageReceived;
+
+            _chatService.GroupMessageReceived -= OnGroupMessageReceived; 
 
             _mainViewModel.CurrentView = new UserListViewModel(_mainViewModel, _chatService);
 

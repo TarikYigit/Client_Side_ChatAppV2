@@ -21,7 +21,12 @@
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Margin="5">
-                        <TextBlock Text="{Binding Sender}" FontWeight="Bold" FontSize="12" Foreground="Gray"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
+                            <TextBlock Text="{Binding Sender}" FontWeight="Bold" FontSize="12" Foreground="Gray"/>
+
+                            <TextBlock Text="{Binding Timestamp}" FontSize="10" Foreground="DarkGray" Margin="10,0,0,0" VerticalAlignment="Bottom"/>
+                        </StackPanel>
+
                         <TextBlock Text="{Binding Content}" FontSize="16" Margin="0,2,0,0"/>
                     </StackPanel>
                 </DataTemplate>

@@ -1,5 +1,4 @@
 ﻿using System.IO;
-using ClientSideChatApp.Core;
 
 namespace ClientSideChatApp.Messages
 {

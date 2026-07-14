@@ -30,6 +30,7 @@ namespace Client_Side_ChatApp
             _execute = execute ?? throw new ArgumentNullException(nameof(execute));
 
             _canExecute = canExecute;
+            
 
         }
 
@@ -46,7 +47,6 @@ namespace Client_Side_ChatApp
         }
     }
 
-    //2. VIEW MODELS 
     public class MainViewModel : ObservableObject
     {
 

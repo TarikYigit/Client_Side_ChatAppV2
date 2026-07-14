@@ -1,13 +1,10 @@
 ﻿using Client_Side_ChatApp.Messages;
 using ClientSideChatApp.Messages;
 using ClientSideChatApp.Models;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 
 
@@ -17,17 +14,23 @@ namespace ClientSideChatApp.Core
     public enum MessageId : byte
     {
 
-        REGISTER = 1,                   // 0x01 
+        REGISTER = 1,    
 
-        REQUEST_USER_LIST = 2,          // 0x02
+        REQUEST_USER_LIST = 2,     
 
-        CHAT_MESSAGE = 3,               // 0x03
+        CHAT_MESSAGE = 3,        
 
-        DISCONNECT = 4,                 // 0x04
+        DISCONNECT = 4,    
 
-        LOG_IN = 5,                     // 0x05
+        LOG_IN = 5,                     
 
-        FETCH_OFFLINE_MESSAGES = 6      // 0x06
+        FETCH_OFFLINE_MESSAGES = 6,      
+
+        CREATE_GROUP = 7,
+
+        GROUP_CHAT_MESSAGE = 8,
+
+        REQUEST_GROUP_LIST = 9,
 
     }
 
@@ -40,14 +43,16 @@ namespace ClientSideChatApp.Core
 
         private string _myPassword;
 
-        public event Action<byte, string> MessageReceived;
+        public event Action<byte, string, string> MessageReceived;
 
-        public event Action<Dictionary<byte, string>> UserListUpdated;
+        public event Action<List<UserModel>> UserListUpdated;
+        public List<UserModel> AllUsers { get; private set; } = new List<UserModel>();
 
         public event Action<byte> LoginSuccessful;
 
         public event Action<byte> RegisterSuccessful;
 
+        public event Action<byte, string, string, string> GroupMessageReceived; 
 
         public event Action LoginRejected;
 
@@ -55,9 +60,9 @@ namespace ClientSideChatApp.Core
 
         public event Action RegisterRejectedPassword;
 
+        public event Action<List<GroupModel>> GroupListUpdated;
 
-        public Dictionary<byte, string> AllUsers { get; private set; } = new Dictionary<byte, string>();
-        public Dictionary<byte, ObservableCollection<MessageModel>> ChatHistories { get; private set; } = new Dictionary<byte, ObservableCollection<MessageModel>>();
+        public Dictionary<byte, ObservableCollection<MessageModel>>  ChatHistories { get; private set; } = new Dictionary<byte, ObservableCollection<MessageModel>>();
 
 
 
@@ -233,7 +238,7 @@ namespace ClientSideChatApp.Core
 
                                 AllUsers = response.Users;
 
-                                UserListUpdated?.Invoke(AllUsers);
+                                UserListUpdated?.Invoke(AllUsers); 
 
                             }
                             break;
@@ -247,11 +252,13 @@ namespace ClientSideChatApp.Core
 
                                 string message, senderName;
 
-                                SaveMessagesFromOthersOnClientsPC(response, out senderId, out message, out senderName);
+                                string timeString;
 
-                                UpdateUIForClient(senderId, message, senderName);
+                                SaveMessagesFromOthersOnClientsPC(response, out senderId, out message, out senderName, out timeString);
 
-                                MessageReceived?.Invoke(senderId, message);
+                                UpdateUIForClient(senderId, message, senderName, timeString);
+
+                                MessageReceived?.Invoke(senderId, message, timeString);
 
                             }
                             break;
@@ -270,6 +277,45 @@ namespace ClientSideChatApp.Core
                                 }
                             }
                             break;
+
+                        case MessageId.GROUP_CHAT_MESSAGE:
+                            {
+                                GroupChatMessageResponse response = new GroupChatMessageResponse(payload);
+
+                                byte senderId = response.SenderId;
+
+                                byte groupId = response.GroupId;
+
+                                string message = EncryptionManager.DecryptMessage(response.Message);
+
+                                string timeString = response.TimeStamp.ToLocalTime().ToString("yyyy:MM:dd:HH:mm:ss");
+
+                                UserModel sender = AllUsers.Find(u => u.UserId == senderId);
+
+                                string senderName = sender != null ? sender.Username : $"User_{senderId}";
+
+                                string folderPath = $@"C:\Users\tarik.dalkiran\Desktop\Workspace\ChatLogs_{_myUsername}";
+
+                                System.IO.Directory.CreateDirectory(folderPath);
+
+                                string chatFilePath = System.IO.Path.Combine(folderPath, $"GroupChat_{groupId}.txt");
+
+                                System.IO.File.AppendAllText(chatFilePath, $"{senderName}|{timeString}|{message}\n");
+
+                                GroupMessageReceived?.Invoke(groupId, senderName, message, timeString);
+                            }
+                            break;
+
+                        case MessageId.REQUEST_GROUP_LIST:
+                            {
+
+                                GroupListResponse response = new GroupListResponse(payload);
+
+                                GroupListUpdated?.Invoke(response.Groups);
+
+                            }
+                            break;
+
                     }
                 }
             }
@@ -283,7 +329,7 @@ namespace ClientSideChatApp.Core
 
 
 
-        private void UpdateUIForClient(byte senderId, string message, string senderName)
+        private void UpdateUIForClient(byte senderId, string message, string senderName, string timeString)
         {
 
             Application.Current.Dispatcher.Invoke(() =>
@@ -300,6 +346,8 @@ namespace ClientSideChatApp.Core
                 {
 
                     Sender = senderName,
+
+                    Timestamp = timeString,
 
                     Content = message
 
@@ -338,6 +386,7 @@ namespace ClientSideChatApp.Core
 
         private bool ReSetupUser(NetworkStream stream, UserRegisterResponse response)
         {
+
             if (response.IsAccepted)
             {
 
@@ -369,26 +418,54 @@ namespace ClientSideChatApp.Core
                 }
 
                 return false;
+
             }
         }
 
+        public void CreateGroup(string groupName, List<byte> userIdsToInvite)
+        {
 
+            CreateGroupRequest request = new CreateGroupRequest(groupName, userIdsToInvite);
 
-        private void SaveMessagesFromOthersOnClientsPC(ChatMessageResponse response, out byte senderId, out string message, out string senderName)
+            SendPacket(request.GetId(), request.ToBytes());
+
+        }
+
+        public void SendGroupMessage(byte senderId, byte groupId, string content)
+        {
+            GroupChatMessageRequest request = new GroupChatMessageRequest(senderId, groupId, content);
+
+            SendPacket(request.GetId(), request.ToBytes());
+        }
+
+        public void RequestGroupList(byte myUserId)
+        {
+
+            SimpleByteRequest request = new SimpleByteRequest((byte)MessageId.REQUEST_GROUP_LIST, myUserId);
+
+            SendPacket(request.GetId(), request.ToBytes());
+
+        }
+
+        private void SaveMessagesFromOthersOnClientsPC(ChatMessageResponse response, out byte senderId, out string message, out string senderName, out string timeString)
         {
             senderId = response.SenderId;
 
             message = EncryptionManager.DecryptMessage(response.Message);
 
-            senderName = AllUsers.ContainsKey(senderId) ? AllUsers[senderId] : $"User_{senderId}";
+            timeString = response.TimeStamp.ToLocalTime().ToString("yyyy:MM:dd:HH:mm:ss");
+
+            UserModel sender = AllUsers.Find(u => u.UserId == response.SenderId);
+
+            senderName = sender != null ? sender.Username : $"User_{response.SenderId}";
 
             string folderPath = $@"C:\Users\tarik.dalkiran\Desktop\Workspace\ChatLogs_{_myUsername}";
 
             System.IO.Directory.CreateDirectory(folderPath);
 
-            string chatFilePath = System.IO.Path.Combine(folderPath, $"ChatWith_{senderId}.txt");
+            string chatFilePath = System.IO.Path.Combine(folderPath, $"ChatWith_{response.SenderId}.txt");
 
-            System.IO.File.AppendAllText(chatFilePath, $"{senderName}|{message}\n");
+            System.IO.File.AppendAllText(chatFilePath, $"{senderName}|{timeString}|{message}\n");
 
         }
     }

@@ -3,16 +3,16 @@ using System.Text;
 
 namespace ClientSideChatApp.Messages
 {
-    internal class ChatMessageResponse
+    public class GroupChatMessageResponse
     {
         public byte SenderId { get; private set; }
-
-        public DateTime TimeStamp { get; private set; } 
-
+        public byte GroupId { get; private set; }
+        public DateTime TimeStamp { get; private set; }
         public string Message { get; private set; }
 
-        public ChatMessageResponse(byte[] payload)
+        public GroupChatMessageResponse(byte[] payload)
         {
+
             if (payload == null || payload.Length == 0) return;
 
             using (MemoryStream ms = new MemoryStream(payload))
@@ -21,6 +21,8 @@ namespace ClientSideChatApp.Messages
             {
 
                 SenderId = reader.ReadByte();
+
+                GroupId = reader.ReadByte();
 
                 long ticks = reader.ReadInt64();
 
@@ -35,10 +37,6 @@ namespace ClientSideChatApp.Messages
 
                     Message = Encoding.UTF8.GetString(msgBytes);
 
-                }
-                else
-                {
-                    Message = string.Empty;
                 }
             }
         }

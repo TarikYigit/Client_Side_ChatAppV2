@@ -1,6 +1,5 @@
-﻿using ClientSideChatApp.Core;
-using System;
-using System.Windows.Input;
+﻿using System.Windows.Input;
+
 namespace ClientSideChatApp.Core
 {
 

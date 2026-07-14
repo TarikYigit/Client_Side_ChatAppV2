@@ -8,17 +8,68 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Text="Select a User to Connect To:" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="20"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
 
-        <ListBox Grid.Row="1" ItemsSource="{Binding Users}" SelectedItem="{Binding SelectedUser}" FontSize="16">
+        <TextBlock Grid.Row="0" Grid.Column="0" Text="Users" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
+        <TextBlock Grid.Row="0" Grid.Column="2" Text="Groups" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
+
+        <ListBox Grid.Row="1" Grid.Column="0" ItemsSource="{Binding Users}" SelectedItem="{Binding SelectedUser}" FontSize="16">
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <TextBlock Text="{Binding Username}" Padding="10"/>
+                    <StackPanel Orientation="Horizontal" Margin="10">
+
+                        <CheckBox IsChecked="{Binding IsSelected}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+
+                        <Ellipse Width="12" Height="12" Margin="0,0,10,0" VerticalAlignment="Center">
+                            <Ellipse.Style>
+                                <Style TargetType="Ellipse">
+                                    <Setter Property="Fill" Value="#FF4C4C"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsOnline}" Value="True">
+                                            <Setter Property="Fill" Value="#28A745"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Ellipse.Style>
+                        </Ellipse>
+
+                        <TextBlock Text="{Binding Username}" VerticalAlignment="Center"/>
+                    </StackPanel>
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
 
-        <Button Grid.Row="2" Content="Connect" Command="{Binding ConnectCommand}" 
-                Margin="0,15,0,0" Padding="10" FontSize="16" Background="#28A745" Foreground="White" BorderThickness="0"/>
+        <ListBox Grid.Row="1" Grid.Column="2" ItemsSource="{Binding Groups}" SelectedItem="{Binding SelectedGroup}" FontSize="16">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal" Margin="10">
+                        <TextBlock Text="👥" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding GroupName}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <Grid Grid.Row="2" Grid.ColumnSpan="3" Margin="0,20,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBox Grid.Column="0" Text="{Binding GroupName, UpdateSourceTrigger=PropertyChanged}" 
+                     Margin="0,0,10,0" Padding="8" FontSize="16" VerticalContentAlignment="Center"/>
+
+            <Button Grid.Column="1" Content="Create Group" Command="{Binding CreateGroupCommand}" 
+                    Margin="0,0,20,0" Padding="15,10" FontSize="16" Background="#0078D7" Foreground="White" BorderThickness="0"/>
+
+            <Button Grid.Column="2" Content="Connect" Command="{Binding ConnectCommand}" 
+                    Padding="30,10" FontSize="16" Background="#28A745" Foreground="White" BorderThickness="0"/>
+        </Grid>
+
     </Grid>
 </UserControl>

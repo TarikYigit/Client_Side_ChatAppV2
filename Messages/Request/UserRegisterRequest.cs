@@ -1,6 +1,5 @@
 ﻿using System.IO;
 using System.Text;
-using System.Windows.Controls;
 using ClientSideChatApp.Core;
 
 namespace ClientSideChatApp.Messages
