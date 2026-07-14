@@ -1,5 +1,4 @@
 ﻿using ClientSideChatApp.Core;
-using System;
 using System.Windows;
 
 namespace ClientSideChatApp.ViewModels

@@ -16,13 +16,7 @@ namespace Client_Side_ChatApp
 
         }
     }
-    // IUsers ve IConnections ve Stream 
-    // Online-ofline --> Chat mesajlarına zaman --> Chat ekranında zaman gözüksün --> 
-    // Önce multi message
 
-    // Oda sonra
-    // Oda chatlarine mesaj atalım herkese gitsin offline ise girince oda da mesaj var görsün.
-    // Login olduğu zaman oda listesi
     public class RelayCommand : ICommand
     {
 
@@ -53,7 +47,6 @@ namespace Client_Side_ChatApp
         }
     }
 
-    //2. VIEW MODELS 
     public class MainViewModel : ObservableObject
     {
 
