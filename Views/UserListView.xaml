@@ -13,7 +13,24 @@
         <ListBox Grid.Row="1" ItemsSource="{Binding Users}" SelectedItem="{Binding SelectedUser}" FontSize="16">
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <TextBlock Text="{Binding Username}" Padding="10"/>
+                    <StackPanel Orientation="Horizontal" Margin="10">
+
+                        <Ellipse Width="12" Height="12" Margin="0,0,10,0" VerticalAlignment="Center">
+                            <Ellipse.Style>
+                                <Style TargetType="Ellipse">
+                                    <Setter Property="Fill" Value="#FF4C4C"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsOnline}" Value="True">
+                                            <Setter Property="Fill" Value="#28A745"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Ellipse.Style>
+                        </Ellipse>
+
+                        <TextBlock Text="{Binding Username}" VerticalAlignment="Center"/>
+
+                    </StackPanel>
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>

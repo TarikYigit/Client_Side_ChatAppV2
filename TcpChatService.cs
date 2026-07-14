@@ -379,7 +379,7 @@ namespace ClientSideChatApp.Core
 
 
 
-        private void SaveMessagesFromOthersOnClientsPC(ChatMessageResponse response, byte senderId, out string message, out string senderName, out string timeString)
+        private void SaveMessagesFromOthersOnClientsPC(ChatMessageResponse response, out byte senderId, out string message, out string senderName, out string timeString)
         {
             senderId = response.SenderId;
 
@@ -387,17 +387,18 @@ namespace ClientSideChatApp.Core
 
             timeString = response.TimeStamp.ToLocalTime().ToString("yyyy:MM:dd:HH:mm:ss");
 
-            UserModel sender = AllUsers.Find(u => u.UserId == senderId);
+            UserModel sender = AllUsers.Find(u => u.UserId == response.SenderId);
 
-            senderName = sender != null ? sender.Username : $"User_{senderId}";
+            senderName = sender != null ? sender.Username : $"User_{response.SenderId}";
 
             string folderPath = $@"C:\Users\tarik.dalkiran\Desktop\Workspace\ChatLogs_{_myUsername}";
 
             System.IO.Directory.CreateDirectory(folderPath);
 
-            string chatFilePath = System.IO.Path.Combine(folderPath, $"ChatWith_{senderId}.txt");
+            string chatFilePath = System.IO.Path.Combine(folderPath, $"ChatWith_{response.SenderId}.txt");
 
             System.IO.File.AppendAllText(chatFilePath, $"{senderName}|{timeString}|{message}\n");
+
         }
     }
 }
