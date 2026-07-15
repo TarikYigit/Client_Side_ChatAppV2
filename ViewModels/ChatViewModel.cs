@@ -74,7 +74,9 @@ namespace ClientSideChatApp.ViewModels
         {
             Messages = new ObservableCollection<MessageModel>();
 
-            string folderPath = $@"C:\Users\tarik.dalkiran\Desktop\Workspace\ChatLogs_{_mainViewModel.MyUsername}";
+            string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+
+            string folderPath = System.IO.Path.Combine(appData, "ClientSideChatApp", $"ChatLogs_{_mainViewModel.MyUsername}");
 
             System.IO.Directory.CreateDirectory(folderPath);
 

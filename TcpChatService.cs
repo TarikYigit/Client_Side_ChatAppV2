@@ -294,7 +294,9 @@ namespace ClientSideChatApp.Core
 
                                 string senderName = sender != null ? sender.Username : $"User_{senderId}";
 
-                                string folderPath = $@"C:\Users\tarik.dalkiran\Desktop\Workspace\ChatLogs_{_myUsername}";
+                                string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+
+                                string folderPath = System.IO.Path.Combine(appData, "ClientSideChatApp", $"ChatLogs_{_myUsername}");
 
                                 System.IO.Directory.CreateDirectory(folderPath);
 
@@ -459,7 +461,9 @@ namespace ClientSideChatApp.Core
 
             senderName = sender != null ? sender.Username : $"User_{response.SenderId}";
 
-            string folderPath = $@"C:\Users\tarik.dalkiran\Desktop\Workspace\ChatLogs_{_myUsername}";
+            string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+
+            string folderPath = System.IO.Path.Combine(appData, "ClientSideChatApp", $"ChatLogs_{_myUsername}");
 
             System.IO.Directory.CreateDirectory(folderPath);
 
