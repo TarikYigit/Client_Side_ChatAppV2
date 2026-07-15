@@ -1,7 +1,9 @@
 ﻿using ClientSideChatApp.Core;
 using ClientSideChatApp.Models;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Windows;
+using System.Windows.Data;
 
 namespace ClientSideChatApp.ViewModels
 {
@@ -14,6 +16,24 @@ namespace ClientSideChatApp.ViewModels
         public ObservableCollection<GroupModel> Groups { get; set; }
 
         private UserModel _selectedUser;
+
+        private string _searchText = string.Empty;
+
+        public string SearchText
+        {
+            get { return _searchText; }
+            set
+            {
+                _searchText = value;
+
+                OnPropertyChanged();
+
+                CollectionViewSource.GetDefaultView(Users).Refresh();
+
+                CollectionViewSource.GetDefaultView(Groups).Refresh();
+
+            }
+        }
 
         public UserModel SelectedUser
         {
@@ -100,6 +120,14 @@ namespace ClientSideChatApp.ViewModels
             _chatService.GroupListUpdated += OnGroupListUpdated;
 
             _chatService.RequestGroupList(_mainViewModel.MyUserId);
+
+            ICollectionView userView = CollectionViewSource.GetDefaultView(Users);
+
+            userView.Filter = o => string.IsNullOrWhiteSpace(SearchText) || ((UserModel)o).Username.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) >= 0;
+
+            ICollectionView groupView = CollectionViewSource.GetDefaultView(Groups);
+
+            groupView.Filter = o => string.IsNullOrWhiteSpace(SearchText) || ((GroupModel)o).GroupName.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private void OnUserListUpdated(List<UserModel> updatedUsers)
