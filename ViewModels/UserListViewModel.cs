@@ -64,8 +64,12 @@ namespace ClientSideChatApp.ViewModels
         }
 
         public RelayCommand ConnectCommand { get; set; }
+
         public RelayCommand CreateGroupCommand { get; set; }
-        public RelayCommand LeaveGroupCommand { get; set; } 
+
+        public RelayCommand LeaveGroupCommand { get; set; }
+
+        public RelayCommand AddUserToGroupCommand { get; set; }
 
         public UserListViewModel(MainViewModel mainViewModel, TcpChatService chatService)
         {
@@ -79,6 +83,8 @@ namespace ClientSideChatApp.ViewModels
 
             Groups = new ObservableCollection<GroupModel>();
 
+
+            AddUserToGroupCommand = new RelayCommand(ExecuteAddUserToGroup, CanExecuteAddUserToGroup);
 
             ConnectCommand = new RelayCommand(ExecuteConnect, CanExecuteConnect);
 
@@ -195,6 +201,32 @@ namespace ClientSideChatApp.ViewModels
 
             SelectedGroup = null;
 
+        }
+
+        private bool CanExecuteAddUserToGroup(object parameter)
+        {
+
+            return SelectedGroup != null && Users.Any(u => u.IsSelected);
+
+        }
+
+        private void ExecuteAddUserToGroup(object parameter)
+        {
+
+            List<byte> selectedIds = Users.Where(u => u.IsSelected)
+                                          .Select(u => u.UserId)
+                                          .ToList();
+
+            foreach (byte id in selectedIds)
+            {
+
+                _chatService.AddUserToGroup((byte)SelectedGroup.GroupId, id);
+
+            }
+
+            foreach (var user in Users) user.IsSelected = false;
+
+            SelectedGroup = null;
         }
     }
 }
