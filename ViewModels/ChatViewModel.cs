@@ -36,8 +36,25 @@ namespace ClientSideChatApp.ViewModels
 
             get { return _inputText; }
 
-            set { _inputText = value; OnPropertyChanged(); }
+            set { 
+                _inputText = value; 
+                OnPropertyChanged();
+                if (TargetUser != null && !string.IsNullOrEmpty(_inputText))
+                {
 
+                    _chatService.SendTypingStatus(_mainViewModel.MyUserId, TargetUser.UserId);
+
+                }
+            }
+
+        }
+
+        private bool _isTyping;
+        public bool IsTyping
+        {
+            get { return _isTyping; }
+
+            set { _isTyping = value; OnPropertyChanged(); }
         }
 
         public RelayCommand SendCommand { get; set; }
@@ -104,6 +121,19 @@ namespace ClientSideChatApp.ViewModels
             _chatService.GroupMessageReceived += OnGroupMessageReceived; 
 
             _chatService.FetchMissedMessages(_mainViewModel.MyUserId);
+
+            _chatService.UserIsTypingReceived += (typerId) =>
+            {
+                if (TargetUser != null && typerId == TargetUser.UserId)
+                {
+                    Application.Current.Dispatcher.Invoke(async () =>
+                    {
+                        IsTyping = true;
+                        await Task.Delay(2000);
+                        IsTyping = false;
+                    });
+                }
+            };
         }
 
         private void LoadChatHistory()

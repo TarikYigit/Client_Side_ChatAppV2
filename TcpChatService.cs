@@ -36,6 +36,8 @@ namespace ClientSideChatApp.Core
 
         ADD_USER_TO_GROUP = 11,
 
+        TYPING_STATUS = 12,
+
     }
 
     public class TcpChatService
@@ -65,6 +67,8 @@ namespace ClientSideChatApp.Core
         public event Action RegisterRejectedPassword;
 
         public event Action<List<GroupModel>> GroupListUpdated;
+
+        public event Action<byte> UserIsTypingReceived;
 
         public Dictionary<byte, ObservableCollection<MessageModel>>  ChatHistories { get; private set; } = new Dictionary<byte, ObservableCollection<MessageModel>>();
 
@@ -323,6 +327,16 @@ namespace ClientSideChatApp.Core
                             }
                             break;
 
+                        case MessageId.TYPING_STATUS:
+                            {
+
+                                byte typerId = payload[0];
+
+                                UserIsTypingReceived?.Invoke(typerId);
+
+                            }
+                            break;
+
                     }
                 }
             }
@@ -507,6 +521,13 @@ namespace ClientSideChatApp.Core
                 SendPacket((byte)MessageId.ADD_USER_TO_GROUP, ms.ToArray());
 
             }
+        }
+
+        public void SendTypingStatus(byte myId, byte targetId)
+        {
+
+            SendPacket((byte)MessageId.TYPING_STATUS, new byte[] { targetId });
+
         }
     }
 }
