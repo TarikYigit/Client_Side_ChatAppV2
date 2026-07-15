@@ -59,15 +59,19 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
             <TextBox Grid.Column="0" Text="{Binding GroupName, UpdateSourceTrigger=PropertyChanged}" 
                      Margin="0,0,10,0" Padding="8" FontSize="16" VerticalContentAlignment="Center"/>
 
             <Button Grid.Column="1" Content="Create Group" Command="{Binding CreateGroupCommand}" 
-                    Margin="0,0,20,0" Padding="15,10" FontSize="16" Background="#0078D7" Foreground="White" BorderThickness="0"/>
+                    Margin="0,0,10,0" Padding="15,10" FontSize="16" Background="#0078D7" Foreground="White" BorderThickness="0"/>
 
-            <Button Grid.Column="2" Content="Connect" Command="{Binding ConnectCommand}" 
+            <Button Grid.Column="2" Content="Leave Group" Command="{Binding LeaveGroupCommand}" 
+                    Margin="0,0,10,0" Padding="15,10" FontSize="16" Background="#DC3545" Foreground="White" BorderThickness="0"/>
+
+            <Button Grid.Column="3" Content="Connect" Command="{Binding ConnectCommand}" 
                     Padding="30,10" FontSize="16" Background="#28A745" Foreground="White" BorderThickness="0"/>
         </Grid>
 

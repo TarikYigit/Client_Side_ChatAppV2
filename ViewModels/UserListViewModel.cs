@@ -10,11 +10,11 @@ namespace ClientSideChatApp.ViewModels
         private MainViewModel _mainViewModel;
 
         private TcpChatService _chatService;
-
         public ObservableCollection<UserModel> Users { get; set; }
         public ObservableCollection<GroupModel> Groups { get; set; }
 
         private UserModel _selectedUser;
+
         public UserModel SelectedUser
         {
             get { return _selectedUser; }
@@ -32,6 +32,8 @@ namespace ClientSideChatApp.ViewModels
                 OnPropertyChanged();
             }
         }
+
+
 
         private GroupModel _selectedGroup;
         public GroupModel SelectedGroup
@@ -63,7 +65,7 @@ namespace ClientSideChatApp.ViewModels
 
         public RelayCommand ConnectCommand { get; set; }
         public RelayCommand CreateGroupCommand { get; set; }
-
+        public RelayCommand LeaveGroupCommand { get; set; } 
 
         public UserListViewModel(MainViewModel mainViewModel, TcpChatService chatService)
         {
@@ -72,13 +74,18 @@ namespace ClientSideChatApp.ViewModels
 
             _chatService = chatService;
 
+
             Users = new ObservableCollection<UserModel>();
 
             Groups = new ObservableCollection<GroupModel>();
 
+
             ConnectCommand = new RelayCommand(ExecuteConnect, CanExecuteConnect);
 
             CreateGroupCommand = new RelayCommand(ExecuteCreateGroup, CanExecuteCreateGroup);
+
+            LeaveGroupCommand = new RelayCommand(ExecuteLeaveGroup, CanExecuteLeaveGroup);
+
 
             _chatService.UserListUpdated += OnUserListUpdated;
 
@@ -172,6 +179,22 @@ namespace ClientSideChatApp.ViewModels
                 user.IsSelected = false;
 
             }
+        }
+
+        private bool CanExecuteLeaveGroup(object parameter)
+        {
+
+            return SelectedGroup != null;
+
+        }
+
+        private void ExecuteLeaveGroup(object parameter)
+        {
+
+            _chatService.LeaveGroup(_mainViewModel.MyUserId, (byte)SelectedGroup.GroupId);
+
+            SelectedGroup = null;
+
         }
     }
 }

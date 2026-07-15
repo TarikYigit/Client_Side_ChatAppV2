@@ -32,6 +32,8 @@ namespace ClientSideChatApp.Core
 
         REQUEST_GROUP_LIST = 9,
 
+        LEAVE_GROUP = 10,
+
     }
 
     public class TcpChatService
@@ -471,6 +473,21 @@ namespace ClientSideChatApp.Core
 
             System.IO.File.AppendAllText(chatFilePath, $"{senderName}|{timeString}|{message}\n");
 
+        }
+        public void LeaveGroup(byte myUserId, byte groupId)
+        {
+            using (System.IO.MemoryStream ms = new System.IO.MemoryStream())
+
+            using (System.IO.BinaryWriter writer = new System.IO.BinaryWriter(ms))
+            {
+
+                writer.Write(myUserId);
+
+                writer.Write(groupId);
+
+                SendPacket((byte)MessageId.LEAVE_GROUP, ms.ToArray());
+
+            }
         }
     }
 }
