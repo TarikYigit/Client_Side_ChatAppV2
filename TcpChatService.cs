@@ -214,6 +214,7 @@ namespace ClientSideChatApp.Core
 
                     byte[] payload = networkReader.ReadBytes(payloadLength);
 
+
                     switch ((MessageId)packetType)
                     {
 
