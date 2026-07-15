@@ -34,6 +34,8 @@ namespace ClientSideChatApp.Core
 
         LEAVE_GROUP = 10,
 
+        ADD_USER_TO_GROUP = 11,
+
     }
 
     public class TcpChatService
@@ -487,6 +489,22 @@ namespace ClientSideChatApp.Core
                 writer.Write(groupId);
 
                 SendPacket((byte)MessageId.LEAVE_GROUP, ms.ToArray());
+
+            }
+        }
+
+        public void AddUserToGroup(byte groupId, byte userToAddId)
+        {
+            using (System.IO.MemoryStream ms = new System.IO.MemoryStream())
+
+            using (System.IO.BinaryWriter writer = new System.IO.BinaryWriter(ms))
+            {
+
+                writer.Write(groupId);
+
+                writer.Write(userToAddId);
+
+                SendPacket((byte)MessageId.ADD_USER_TO_GROUP, ms.ToArray());
 
             }
         }
