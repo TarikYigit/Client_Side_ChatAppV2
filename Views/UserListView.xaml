@@ -17,8 +17,23 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <TextBox Grid.Row="0" Grid.ColumnSpan="3" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
-                 Margin="0,0,0,20" Padding="8" FontSize="14" HorizontalAlignment="Stretch" />
+        <Grid Grid.Row="0" Grid.ColumnSpan="3" Margin="0,0,0,20">
+            <TextBox x:Name="SearchBox" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
+                     Padding="8" FontSize="14" HorizontalAlignment="Stretch" />
+            <TextBlock IsHitTestVisible="False" Text="🔍 Search users or groups..." 
+                       VerticalAlignment="Center" Margin="10,0,0,0" Foreground="Gray" FontSize="14">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Text, ElementName=SearchBox}" Value="">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+        </Grid>
 
         <TextBlock Grid.Row="1" Grid.Column="0" Text="Users" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
         <TextBlock Grid.Row="1" Grid.Column="2" Text="Groups" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
@@ -66,8 +81,23 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <TextBox Grid.Column="0" Text="{Binding GroupName, UpdateSourceTrigger=PropertyChanged}" 
-                     Margin="0,0,10,0" Padding="8" FontSize="16" VerticalContentAlignment="Center"/>
+            <Grid Grid.Column="0" Margin="0,0,10,0">
+                <TextBox x:Name="GroupNameBox" Text="{Binding GroupName, UpdateSourceTrigger=PropertyChanged}" 
+                         Padding="8" FontSize="16" VerticalContentAlignment="Center"/>
+                <TextBlock IsHitTestVisible="False" Text="New group name..." 
+                           VerticalAlignment="Center" Margin="10,0,0,0" Foreground="Gray" FontSize="16">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Text, ElementName=GroupNameBox}" Value="">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </Grid>
 
             <Button Grid.Column="1" Content="Create Group" Command="{Binding CreateGroupCommand}" 
                     Margin="0,0,10,0" Padding="15,10" FontSize="16" Background="#0078D7" Foreground="White" BorderThickness="0"/>
