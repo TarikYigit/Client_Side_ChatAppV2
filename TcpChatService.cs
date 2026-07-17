@@ -38,6 +38,10 @@ namespace ClientSideChatApp.Core
 
         TYPING_STATUS = 12,
 
+        FILE_START = 13,
+
+        FILE_CHUNK = 14
+
     }
 
     public class TcpChatService
@@ -522,6 +526,37 @@ namespace ClientSideChatApp.Core
 
             SendPacket((byte)MessageId.TYPING_STATUS, new byte[] { targetId });
 
+        }
+
+        public void SendFile(string filePath)
+        {
+
+            byte[] fileData = System.IO.File.ReadAllBytes(filePath);
+
+            string fileName = System.IO.Path.GetFileName(filePath);
+
+            using (MemoryStream ms = new MemoryStream())
+
+            using (BinaryWriter writer = new BinaryWriter(ms))
+            {
+
+                writer.Write(fileName);
+
+                writer.Write(fileData.Length);
+
+                SendPacket((byte)MessageId.FILE_START, ms.ToArray());
+
+            }
+
+            int chunkSize = 4096; 
+            for (int i = 0; i < fileData.Length; i += chunkSize)
+            {
+                int remaining = Math.Min(chunkSize, fileData.Length - i);
+                byte[] chunk = new byte[remaining];
+                Array.Copy(fileData, i, chunk, 0, remaining);
+
+                SendPacket((byte)MessageId.FILE_CHUNK, chunk);
+            }
         }
     }
 }

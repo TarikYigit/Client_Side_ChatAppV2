@@ -236,5 +236,20 @@ namespace ClientSideChatApp.ViewModels
             _mainViewModel.CurrentView = new UserListViewModel(_mainViewModel, _chatService);
 
         }
+
+        private void ExecuteAttachFile(object parameter)
+        {
+
+            Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
+
+            dlg.Filter = "Images/Video|*.jpg;*.png;*.mp4;*.mov";
+
+            if (dlg.ShowDialog() == true)
+            {
+
+                _chatService.SendFile(dlg.FileName);
+
+            }
+        }
     }
 }
