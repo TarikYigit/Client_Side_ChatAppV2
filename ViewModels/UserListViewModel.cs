@@ -85,11 +85,7 @@ namespace ClientSideChatApp.ViewModels
 
         public RelayCommand ConnectCommand { get; set; }
 
-        public RelayCommand CreateGroupCommand { get; set; }
-
-        public RelayCommand LeaveGroupCommand { get; set; }
-
-        public RelayCommand AddUserToGroupCommand { get; set; }
+        public RelayCommand OpenCreateGroupCommand { get; set; } 
 
         public UserListViewModel(MainViewModel mainViewModel, TcpChatService chatService)
         {
@@ -103,15 +99,9 @@ namespace ClientSideChatApp.ViewModels
 
             Groups = new ObservableCollection<GroupModel>();
 
-
-            AddUserToGroupCommand = new RelayCommand(ExecuteAddUserToGroup, CanExecuteAddUserToGroup);
-
             ConnectCommand = new RelayCommand(ExecuteConnect, CanExecuteConnect);
 
-            CreateGroupCommand = new RelayCommand(ExecuteCreateGroup, CanExecuteCreateGroup);
-
-            LeaveGroupCommand = new RelayCommand(ExecuteLeaveGroup, CanExecuteLeaveGroup);
-
+            OpenCreateGroupCommand = new RelayCommand(ExecuteOpenCreateGroup);
 
             _chatService.UserListUpdated += OnUserListUpdated;
 
@@ -165,6 +155,7 @@ namespace ClientSideChatApp.ViewModels
             });
         }
 
+
         private bool CanExecuteConnect(object parameter)
         {
 
@@ -184,77 +175,17 @@ namespace ClientSideChatApp.ViewModels
             else if (SelectedGroup != null)
             {
 
-                _mainViewModel.CurrentView = new ChatViewModel(_mainViewModel, _chatService, SelectedGroup);
+                _mainViewModel.CurrentView = new GroupChatViewModel(_mainViewModel, _chatService, SelectedGroup);
 
             }
         }
 
-        private bool CanExecuteCreateGroup(object parameter)
+
+        private void ExecuteOpenCreateGroup(object parameter)
         {
 
-            return !string.IsNullOrWhiteSpace(GroupName) && Users.Any(u => u.IsSelected);
+            _mainViewModel.CurrentView = new CreateGroupViewModel(_mainViewModel, _chatService, Users);
 
-        }
-
-        private void ExecuteCreateGroup(object parameter)
-        {
-
-            List<byte> selectedIds = Users.Where(u => u.IsSelected)
-                                          .Select(u => u.UserId)
-                                          .ToList();
-
-            _chatService.CreateGroup(GroupName, selectedIds);
-
-            GroupName = string.Empty;
-
-            foreach (var user in Users)
-            {
-
-                user.IsSelected = false;
-
-            }
-        }
-
-        private bool CanExecuteLeaveGroup(object parameter)
-        {
-
-            return SelectedGroup != null;
-
-        }
-
-        private void ExecuteLeaveGroup(object parameter)
-        {
-
-            _chatService.LeaveGroup(_mainViewModel.MyUserId, (byte)SelectedGroup.GroupId);
-
-            SelectedGroup = null;
-
-        }
-
-        private bool CanExecuteAddUserToGroup(object parameter)
-        {
-
-            return SelectedGroup != null && Users.Any(u => u.IsSelected);
-
-        }
-
-        private void ExecuteAddUserToGroup(object parameter)
-        {
-
-            List<byte> selectedIds = Users.Where(u => u.IsSelected)
-                                          .Select(u => u.UserId)
-                                          .ToList();
-
-            foreach (byte id in selectedIds)
-            {
-
-                _chatService.AddUserToGroup((byte)SelectedGroup.GroupId, id);
-
-            }
-
-            foreach (var user in Users) user.IsSelected = false;
-
-            SelectedGroup = null;
         }
     }
 }

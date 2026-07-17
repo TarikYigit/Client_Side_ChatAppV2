@@ -107,7 +107,7 @@ namespace ClientSideChatApp.ViewModels
             Application.Current.Dispatcher.Invoke(() =>
             {
 
-                MessageBox.Show("Register rejected by server. Password too weak.", "Error");
+                MessageBox.Show("Password too weak. \n Have a least: \n 1 uppercase \n 1 lower case \n 1 number \n 1 special character \n Be 8 or longer in length", "Error");
 
             });
         }

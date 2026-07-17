@@ -19,6 +19,16 @@
         <DataTemplate DataType="{x:Type vm:ChatViewModel}">
             <views:ChatView/>
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:GroupChatViewModel}">
+            <views:GroupChatView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:CreateGroupViewModel}">
+            <views:CreateGroupView />
+        </DataTemplate>
+        
+        <DataTemplate DataType="{x:Type vm:AddUserToGroupViewModel}">
+            <views:AddUserToGroupView />
+        </DataTemplate>
     </Window.Resources>
 
     <Grid Background="#F5F5F5">

@@ -118,8 +118,6 @@ namespace ClientSideChatApp.ViewModels
 
             _chatService.MessageReceived += OnMessageReceived;
 
-            _chatService.GroupMessageReceived += OnGroupMessageReceived; 
-
             _chatService.FetchMissedMessages(_mainViewModel.MyUserId);
 
             _chatService.UserIsTypingReceived += (typerId) =>
@@ -189,25 +187,6 @@ namespace ClientSideChatApp.ViewModels
             }
         }
 
-        private void OnGroupMessageReceived(byte groupId, string senderName, string messageContent, string timeString)
-        {
-            if (TargetGroup != null && groupId == TargetGroup.GroupId)
-            {
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    Messages.Add(new MessageModel
-                    {
-
-                        Sender = senderName,
-
-                        Timestamp = timeString,
-
-                        Content = messageContent
-
-                    });
-                });
-            }
-        }
 
         private bool CanExecuteSend(object parameter) => !string.IsNullOrWhiteSpace(InputText);
 
@@ -253,8 +232,6 @@ namespace ClientSideChatApp.ViewModels
         {
 
             _chatService.MessageReceived -= OnMessageReceived;
-
-            _chatService.GroupMessageReceived -= OnGroupMessageReceived; 
 
             _mainViewModel.CurrentView = new UserListViewModel(_mainViewModel, _chatService);
 

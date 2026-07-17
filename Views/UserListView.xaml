@@ -17,6 +17,7 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
+        <!-- Search Bar -->
         <Grid Grid.Row="0" Grid.ColumnSpan="3" Margin="0,0,0,20">
             <TextBox x:Name="SearchBox" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
                      Padding="8" FontSize="14" HorizontalAlignment="Stretch" />
@@ -35,9 +36,11 @@
             </TextBlock>
         </Grid>
 
+        <!-- Headers -->
         <TextBlock Grid.Row="1" Grid.Column="0" Text="Users" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
         <TextBlock Grid.Row="1" Grid.Column="2" Text="Groups" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
 
+        <!-- User ListBox -->
         <ListBox Grid.Row="2" Grid.Column="0" ItemsSource="{Binding Users}" SelectedItem="{Binding SelectedUser}" FontSize="16">
             <ListBox.ItemTemplate>
                 <DataTemplate>
@@ -61,6 +64,7 @@
             </ListBox.ItemTemplate>
         </ListBox>
 
+        <!-- Group ListBox -->
         <ListBox Grid.Row="2" Grid.Column="2" ItemsSource="{Binding Groups}" SelectedItem="{Binding SelectedGroup}" FontSize="16">
             <ListBox.ItemTemplate>
                 <DataTemplate>
@@ -72,44 +76,20 @@
             </ListBox.ItemTemplate>
         </ListBox>
 
+        <!-- Action Buttons -->
         <Grid Grid.Row="3" Grid.ColumnSpan="3" Margin="0,20,0,0">
             <Grid.ColumnDefinitions>
+                <!-- Pushes buttons to the right -->
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <Grid Grid.Column="0" Margin="0,0,10,0">
-                <TextBox x:Name="GroupNameBox" Text="{Binding GroupName, UpdateSourceTrigger=PropertyChanged}" 
-                         Padding="8" FontSize="16" VerticalContentAlignment="Center"/>
-                <TextBlock IsHitTestVisible="False" Text="New group name..." 
-                           VerticalAlignment="Center" Margin="10,0,0,0" Foreground="Gray" FontSize="16">
-                    <TextBlock.Style>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="Visibility" Value="Collapsed"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding Text, ElementName=GroupNameBox}" Value="">
-                                    <Setter Property="Visibility" Value="Visible"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBlock.Style>
-                </TextBlock>
-            </Grid>
+            <Button Grid.Column="1" Content="Create Group" Command="{Binding OpenCreateGroupCommand}" 
+                    Margin="0,0,10,0" Padding="15,10" FontSize="16" Background="#0078D7" Foreground="White" BorderThickness="0" Cursor="Hand"/>
 
-            <Button Grid.Column="1" Content="Create Group" Command="{Binding CreateGroupCommand}" 
-                    Margin="0,0,10,0" Padding="15,10" FontSize="16" Background="#0078D7" Foreground="White" BorderThickness="0"/>
-
-            <Button Grid.Column="2" Content="Add to Group" Command="{Binding AddUserToGroupCommand}" 
-                    Margin="0,0,10,0" Padding="15,10" FontSize="16" Background="#17A2B8" Foreground="White" BorderThickness="0"/>
-
-            <Button Grid.Column="3" Content="Leave Group" Command="{Binding LeaveGroupCommand}" 
-                    Margin="0,0,10,0" Padding="15,10" FontSize="16" Background="#DC3545" Foreground="White" BorderThickness="0"/>
-
-            <Button Grid.Column="4" Content="Connect" Command="{Binding ConnectCommand}" 
-                    Padding="30,10" FontSize="16" Background="#28A745" Foreground="White" BorderThickness="0"/>
+            <Button Grid.Column="2" Content="Connect" Command="{Binding ConnectCommand}" 
+                    Padding="30,10" FontSize="16" Background="#28A745" Foreground="White" BorderThickness="0" Cursor="Hand"/>
         </Grid>
 
     </Grid>

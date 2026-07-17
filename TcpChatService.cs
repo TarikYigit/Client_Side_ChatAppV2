@@ -491,36 +491,30 @@ namespace ClientSideChatApp.Core
             System.IO.File.AppendAllText(chatFilePath, $"{senderName}|{timeString}|{message}\n");
 
         }
-        public void LeaveGroup(byte myUserId, byte groupId)
+        public void LeaveGroup(byte userId, byte groupId)
         {
-            using (System.IO.MemoryStream ms = new System.IO.MemoryStream())
 
-            using (System.IO.BinaryWriter writer = new System.IO.BinaryWriter(ms))
-            {
+            LeaveGroupRequest request = new LeaveGroupRequest(userId, groupId);
 
-                writer.Write(myUserId);
+            byte[] payload = request.ToBytes();
 
-                writer.Write(groupId);
+            byte messageId = request.GetId();
 
-                SendPacket((byte)MessageId.LEAVE_GROUP, ms.ToArray());
+            SendPacket(messageId, payload);
 
-            }
         }
 
-        public void AddUserToGroup(byte groupId, byte userToAddId)
+        public void AddUserToGroup(byte groupId, byte newUserId)
         {
-            using (System.IO.MemoryStream ms = new System.IO.MemoryStream())
 
-            using (System.IO.BinaryWriter writer = new System.IO.BinaryWriter(ms))
-            {
+            AddUserToGroupRequest request = new AddUserToGroupRequest(groupId, newUserId);
 
-                writer.Write(groupId);
+            byte[] payload = request.ToBytes();
 
-                writer.Write(userToAddId);
+            byte messageId = request.GetId();
 
-                SendPacket((byte)MessageId.ADD_USER_TO_GROUP, ms.ToArray());
+            SendPacket(messageId, payload);
 
-            }
         }
 
         public void SendTypingStatus(byte myId, byte targetId)
