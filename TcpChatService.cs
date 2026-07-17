@@ -38,6 +38,10 @@ namespace ClientSideChatApp.Core
 
         TYPING_STATUS = 12,
 
+        MESSAGE_SENT = 13,
+
+        MESSAGE_SEEN = 14,
+
     }
 
     public class TcpChatService
@@ -70,6 +74,7 @@ namespace ClientSideChatApp.Core
 
         public event Action<byte> UserIsTypingReceived;
 
+        public event Action<int, bool> MessageStatusChanged;
         public Dictionary<byte, ObservableCollection<MessageModel>>  ChatHistories { get; private set; } = new Dictionary<byte, ObservableCollection<MessageModel>>();
 
 
@@ -155,10 +160,10 @@ namespace ClientSideChatApp.Core
 
         }
 
-        public void SendMessage(byte senderId, byte receiverId, string content)
+        public void SendMessage(byte senderId, byte receiverId, string content, int messageid)
         {
 
-            ChatMessageRequest request = new ChatMessageRequest(senderId, receiverId, content);
+            ChatMessageRequest request = new ChatMessageRequest(senderId, receiverId, content, messageid);
 
             SendPacket(request.GetId(), request.ToBytes());
 
@@ -337,6 +342,24 @@ namespace ClientSideChatApp.Core
                             }
                             break;
 
+                        case MessageId.MESSAGE_SENT: // MESSAGE_DELIVERED
+                            {
+
+                                int deliveredMsgId = BitConverter.ToInt32(payload, 0);
+
+                                MessageStatusChanged?.Invoke(deliveredMsgId, false);
+                            }
+                            break;
+
+                        case MessageId.MESSAGE_SEEN: 
+                            {
+
+                                int seenMsgId = BitConverter.ToInt32(payload, 0);
+
+                                MessageStatusChanged?.Invoke(seenMsgId, true);
+                            }
+                            break;
+
                     }
                 }
             }
@@ -452,9 +475,9 @@ namespace ClientSideChatApp.Core
 
         }
 
-        public void SendGroupMessage(byte senderId, byte groupId, string content)
+        public void SendGroupMessage(byte senderId, byte groupId,  int messageid, string content)
         {
-            GroupChatMessageRequest request = new GroupChatMessageRequest(senderId, groupId, content);
+            GroupChatMessageRequest request = new GroupChatMessageRequest(senderId, groupId, messageid, content);
 
             SendPacket(request.GetId(), request.ToBytes());
         }
@@ -522,6 +545,31 @@ namespace ClientSideChatApp.Core
 
             SendPacket((byte)MessageId.TYPING_STATUS, new byte[] { targetId });
 
+        }
+
+        private void UpdateMessageStatus(int messageId, bool isRead)
+        {
+
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+
+                foreach (var chatHistory in ChatHistories.Values)
+                {
+
+                    var msg = chatHistory.FirstOrDefault(m => m.MessageId == messageId);
+
+                    if (msg != null)
+                    {
+
+                        if (!isRead) msg.IsSent = true;
+
+                        else msg.IsSeen = true;
+
+                        break;
+
+                    }
+                }
+            });
         }
     }
 }

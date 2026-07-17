@@ -12,14 +12,18 @@ namespace ClientSideChatApp.Messages
 
         public byte ReceiverId { get; private set; }
 
+        private int messageId;
+
         public string Content { get; private set; }
 
-        public ChatMessageRequest(byte senderId, byte receiverId, string content)
+        public ChatMessageRequest(byte senderId, byte receiverId, string content, int messageid)
         {
 
             SenderId = senderId;
 
             ReceiverId = receiverId;
+
+            messageId = messageid;
 
             Content = content;
 
@@ -38,6 +42,8 @@ namespace ClientSideChatApp.Messages
                 writer.Write(SenderId);
 
                 writer.Write(ReceiverId);
+
+                writer.Write(messageId);
 
                 writer.Write(Encoding.UTF8.GetBytes(Content));
 

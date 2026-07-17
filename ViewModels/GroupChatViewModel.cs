@@ -83,11 +83,20 @@ namespace ClientSideChatApp.ViewModels
 
                 foreach (string line in savedMessages)
                 {
-                    string[] parts = line.Split(new char[] { '|' }, 3);
+                    // Split by 4 parts now to look for the ID
+                    string[] parts = line.Split(new char[] { '|' }, 4);
 
-                    if (parts.Length == 3)
+                    if (parts.Length == 4)
                     {
-                        Messages.Add(new MessageModel { Sender = parts[0], Timestamp = parts[1], Content = parts[2] });
+                        Messages.Add(new MessageModel
+                        {
+                            Sender = parts[0],
+                            Timestamp = parts[1],
+                            MessageId = int.Parse(parts[2]),
+                            Content = parts[3],
+                            IsSent = true,
+                            IsSeen = true
+                        });
                     }
                 }
             }
@@ -99,7 +108,18 @@ namespace ClientSideChatApp.ViewModels
             {
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-                    Messages.Add(new MessageModel { Sender = senderName, Timestamp = timeString, Content = messageContent });
+                    Messages.Add(new MessageModel
+                    {
+
+                        MessageId = new Random().Next(1, int.MaxValue), 
+
+                        Sender = senderName,
+
+                        Timestamp = timeString,
+
+                        Content = messageContent
+
+                    });
                 });
             }
         }
@@ -108,21 +128,36 @@ namespace ClientSideChatApp.ViewModels
 
         private void ExecuteSend(object parameter)
         {
-
             string cipherText = EncryptionManager.EncryptMessage(InputText);
 
             string currentTime = DateTime.Now.ToString("yyyy:MM:dd:HH:mm:ss");
 
-            _chatService.SendGroupMessage(_mainViewModel.MyUserId, (byte)TargetGroup.GroupId, cipherText);
+            int generatedMessageId = new Random().Next(1, int.MaxValue);
 
-            string fileLine = $"{_mainViewModel.MyUsername}|{currentTime}|{InputText}\n";
+            _chatService.SendGroupMessage(_mainViewModel.MyUserId, (byte)TargetGroup.GroupId, generatedMessageId, cipherText);
+
+            string fileLine = $"{_mainViewModel.MyUsername}|{currentTime}|{generatedMessageId}|{InputText}\n";
 
             System.IO.File.AppendAllText(_currentChatFilePath, fileLine);
 
-            Messages.Add(new MessageModel { Sender = _mainViewModel.MyUsername, Timestamp = currentTime, Content = InputText });
+            Messages.Add(new MessageModel
+            {
+
+                MessageId = generatedMessageId,
+
+                Sender = _mainViewModel.MyUsername,
+
+                Timestamp = currentTime,
+
+                Content = InputText,
+
+                IsSent = false, 
+
+                IsSeen = false
+
+            });
 
             InputText = string.Empty;
-
         }
 
         private void ExecuteAddUser(object parameter)

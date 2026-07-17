@@ -11,9 +11,11 @@ namespace ClientSideChatApp.Messages
 
         private byte _groupId;
 
+        private int _messageId;
+
         private string _content;
 
-        public GroupChatMessageRequest(byte senderId, byte groupId, string content)
+        public GroupChatMessageRequest(byte senderId, byte groupId,int messageid, string content)
         {
 
             _senderId = senderId;
@@ -21,6 +23,8 @@ namespace ClientSideChatApp.Messages
             _groupId = groupId;
 
             _content = content;
+
+            _messageId = messageid;
 
         }
 
@@ -42,6 +46,8 @@ namespace ClientSideChatApp.Messages
                 writer.Write(_senderId);
 
                 writer.Write(_groupId);
+
+                writer.Write(_messageId);
 
                 byte[] contentBytes = Encoding.UTF8.GetBytes(_content);
 

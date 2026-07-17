@@ -12,5 +12,11 @@
 
         public string Timestamp { get; set; }
 
+        public bool IsSent { get; set; }
+
+        public bool IsSeen { get; set; }
+
+        public int MessageId { get; set; }
+
     }
 }
