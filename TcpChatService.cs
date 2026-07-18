@@ -62,7 +62,7 @@ namespace ClientSideChatApp.Core
 
         public event Action<byte> RegisterSuccessful;
 
-        public event Action<byte, int, string, string, string> GroupMessageReceived;
+        public event Action<byte, byte, int, string, string, string> GroupMessageReceived;
         public event Action LoginRejected;
 
         public event Action RegisterRejectedUsername;
@@ -306,7 +306,7 @@ namespace ClientSideChatApp.Core
 
                                 string senderName = sender != null ? sender.Username : $"User_{senderId}";
 
-                                GroupMessageReceived?.Invoke(groupId, messageId, senderName, message, timeString);
+                                GroupMessageReceived?.Invoke(groupId, senderId, messageId, senderName, message, timeString);
                             }
                             break;
 

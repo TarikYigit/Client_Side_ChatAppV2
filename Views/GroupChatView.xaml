@@ -55,7 +55,7 @@
                                                 <Setter Property="Text" Value="✓✓"/>
                                             </DataTrigger>
                                             <!-- Read by User -->
-                                            <DataTrigger Binding="{Binding IsRead}" Value="True">
+                                            <DataTrigger Binding="{Binding IsSeen}" Value="True">
                                                 <Setter Property="Text" Value="✓✓"/>
                                                 <Setter Property="Foreground" Value="#0078D7"/>
                                                 <!-- Blue color -->

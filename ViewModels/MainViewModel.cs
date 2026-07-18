@@ -33,7 +33,7 @@ namespace ClientSideChatApp.ViewModels
 
         }
 
-        private void BackgroundGroupMessageSaver(byte groupId, int messageId, string senderName, string messageContent, string timeString)
+        private void BackgroundGroupMessageSaver(byte groupId, byte senderId, int messageId, string senderName, string messageContent, string timeString)
         {
 
             if (CurrentView is GroupChatViewModel groupVM && groupVM.TargetGroup?.GroupId == groupId)
