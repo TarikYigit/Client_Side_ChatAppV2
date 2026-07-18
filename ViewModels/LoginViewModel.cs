@@ -48,7 +48,7 @@ namespace ClientSideChatApp.ViewModels
 
             _chatService.RegisterRejectedPassword += OnRegisterRejectedPassword;
 
-            _chatService.RegisterRejectedUsername += OnRegisterRejectedPassword;
+            _chatService.RegisterRejectedUsername += OnRegisterRejectedUsername;
 
 
             LoginCommand = new RelayCommand(ExecuteLogin, CanExecuteAuth);
