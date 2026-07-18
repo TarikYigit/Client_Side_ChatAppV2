@@ -10,6 +10,7 @@ namespace ClientSideChatApp.Messages
         public DateTime TimeStamp { get; private set; }
         public string Message { get; private set; }
 
+        public int messageId { get; private set; }
         public GroupChatMessageResponse(byte[] payload)
         {
 
@@ -23,6 +24,8 @@ namespace ClientSideChatApp.Messages
                 SenderId = reader.ReadByte();
 
                 GroupId = reader.ReadByte();
+
+                messageId = reader.ReadInt32();
 
                 long ticks = reader.ReadInt64();
 

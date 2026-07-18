@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using ClientSideChatApp.Core;
+using System.IO;
 using System.Text;
 
 namespace ClientSideChatApp.Messages
@@ -11,6 +12,8 @@ namespace ClientSideChatApp.Messages
 
         public string Message { get; private set; }
 
+        public int Messageid { get; private set; }
+
         public ChatMessageResponse(byte[] payload)
         {
             if (payload == null || payload.Length == 0) return;
@@ -21,6 +24,8 @@ namespace ClientSideChatApp.Messages
             {
 
                 SenderId = reader.ReadByte();
+
+                Messageid = reader.ReadInt32(); 
 
                 long ticks = reader.ReadInt64();
 

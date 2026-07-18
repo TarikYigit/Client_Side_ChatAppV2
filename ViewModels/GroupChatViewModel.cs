@@ -75,6 +75,14 @@ namespace ClientSideChatApp.ViewModels
 
         }
 
+        private void SyncChatFile()
+        {
+
+            var lines = Messages.Select(m => $"{m.Sender}|{m.Timestamp}|{m.MessageId}|{m.Content}|{m.IsSeen}");
+
+            System.IO.File.WriteAllLines(_currentChatFilePath, lines);
+
+        }
         private void LoadChatHistory()
         {
             if (System.IO.File.Exists(_currentChatFilePath))
@@ -102,24 +110,33 @@ namespace ClientSideChatApp.ViewModels
             }
         }
 
-        private void OnGroupMessageReceived(byte groupId, string senderName, string messageContent, string timeString)
+        private void OnGroupMessageReceived(byte groupId, int messageId, string senderName, string messageContent, string timeString)
         {
+
             if (groupId == TargetGroup.GroupId)
             {
+
                 Application.Current.Dispatcher.Invoke(() =>
                 {
+
                     Messages.Add(new MessageModel
                     {
 
-                        MessageId = new Random().Next(1, int.MaxValue), 
+                        MessageId = messageId,
 
                         Sender = senderName,
 
                         Timestamp = timeString,
 
-                        Content = messageContent
+                        Content = messageContent,
+
+                        IsSent = true,
+
+                        IsSeen = true
 
                     });
+
+                    SyncChatFile(); 
                 });
             }
         }
