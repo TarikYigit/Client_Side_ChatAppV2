@@ -98,17 +98,12 @@ namespace ClientSideChatApp.ViewModels
             System.IO.Directory.CreateDirectory(folderPath);
 
             if (TargetGroup != null)
-            {
 
                 _currentChatFilePath = System.IO.Path.Combine(folderPath, $"GroupChat_{TargetGroup.GroupId}.txt");
 
-            }
             else if (TargetUser != null)
-            {
 
                 _currentChatFilePath = System.IO.Path.Combine(folderPath, $"ChatWith_{TargetUser.UserId}.txt");
-
-            }
 
             LoadChatHistory();
 
@@ -118,17 +113,25 @@ namespace ClientSideChatApp.ViewModels
 
             _chatService.MessageReceived += OnMessageReceived;
 
+            _chatService.MessageStatusChanged += OnMessageStatusChanged; 
+
             _chatService.FetchMissedMessages(_mainViewModel.MyUserId);
 
             _chatService.UserIsTypingReceived += (typerId) =>
             {
+
                 if (TargetUser != null && typerId == TargetUser.UserId)
                 {
+
                     Application.Current.Dispatcher.Invoke(async () =>
                     {
+
                         IsTyping = true;
+
                         await Task.Delay(2000);
+
                         IsTyping = false;
+
                     });
                 }
             };
@@ -136,18 +139,31 @@ namespace ClientSideChatApp.ViewModels
 
         private void LoadChatHistory()
         {
+            bool fileNeedsSync = false; // Flag to tell us if we found new messages to mark as Read
+
             if (System.IO.File.Exists(_currentChatFilePath))
             {
-
                 string[] savedMessages = System.IO.File.ReadAllLines(_currentChatFilePath);
 
                 foreach (string line in savedMessages)
                 {
+                    string[] parts = line.Split(new char[] { '|' }, 5);
 
-                    string[] parts = line.Split(new char[] { '|' }, 3);
-
-                    if (parts.Length == 3)
+                    if (parts.Length == 5)
                     {
+                        bool isSeen = bool.Parse(parts[4]);
+
+
+                        if (TargetUser != null && parts[0] == TargetUser.Username && isSeen == false)
+                        {
+
+                            isSeen = true; 
+
+                            fileNeedsSync = true;
+
+                            _chatService.SendReadReceipt(TargetUser.UserId, int.Parse(parts[2]));
+
+                        }
 
                         Messages.Add(new MessageModel
                         {
@@ -156,37 +172,80 @@ namespace ClientSideChatApp.ViewModels
 
                             Timestamp = parts[1],
 
-                            Content = parts[2]
+                            MessageId = int.Parse(parts[2]),
+
+                            Content = parts[3],
+
+                            IsSent = true,
+
+                            IsSeen = isSeen
 
                         });
                     }
                 }
             }
-        }
 
-        private void OnMessageReceived(byte senderId, string messageContent, string timeString)
-        {
-
-            if (TargetUser != null && senderId == TargetUser.UserId)
+            if (fileNeedsSync)
             {
 
+                SyncChatFile();
+
+            }
+        }
+
+        private void OnMessageReceived(byte senderId, int messageId, string messageContent, string timeString)
+        {
+            if (TargetUser != null && senderId == TargetUser.UserId)
+            {
                 Application.Current.Dispatcher.Invoke(() =>
                 {
 
                     Messages.Add(new MessageModel
                     {
 
+                        MessageId = messageId,
+
                         Sender = TargetUser.Username,
 
                         Timestamp = timeString,
 
-                        Content = messageContent
+                        Content = messageContent,
+
+                        IsSent = true,
+
+                        IsSeen = true 
 
                     });
+
+                    SyncChatFile();
+
+                    _chatService.SendReadReceipt(senderId, messageId);
+
                 });
             }
         }
 
+        private void OnMessageStatusChanged(int messageId, bool isRead)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+
+                var msg = Messages.FirstOrDefault(m => m.MessageId == messageId);
+
+                if (msg != null)
+                {
+
+                    if (isRead)
+
+                        msg.IsSeen = true;
+                    else
+
+                        msg.IsSent = true;
+
+                    SyncChatFile();
+                }
+            });
+        }
 
         private bool CanExecuteSend(object parameter) => !string.IsNullOrWhiteSpace(InputText);
 
@@ -197,41 +256,62 @@ namespace ClientSideChatApp.ViewModels
 
             string currentTime = DateTime.Now.ToString("yyyy:MM:dd:HH:mm:ss");
 
+            int generatedMessageId = new Random().Next(1, int.MaxValue);
+
             if (TargetGroup != null)
             {
 
-                _chatService.SendGroupMessage(_mainViewModel.MyUserId, (byte)TargetGroup.GroupId, cipherText);
+                _chatService.SendGroupMessage(_mainViewModel.MyUserId, (byte)TargetGroup.GroupId, generatedMessageId, cipherText);
 
             }
             else if (TargetUser != null)
             {
 
-                _chatService.SendMessage(_mainViewModel.MyUserId, TargetUser.UserId, cipherText);
+                _chatService.SendMessage(_mainViewModel.MyUserId, TargetUser.UserId, cipherText, generatedMessageId);
 
             }
 
-            string fileLine = $"{_mainViewModel.MyUsername}|{currentTime}|{InputText}\n";
+            string fileLine = $"{_mainViewModel.MyUsername}|{currentTime}|{generatedMessageId}|{InputText}\n";
 
             System.IO.File.AppendAllText(_currentChatFilePath, fileLine);
 
+
             Messages.Add(new MessageModel
             {
+
+                MessageId = generatedMessageId,
 
                 Sender = _mainViewModel.MyUsername,
 
                 Timestamp = currentTime,
 
-                Content = InputText
+                Content = InputText,
+
+                IsSent = false,
+
+                IsSeen = false
 
             });
 
             InputText = string.Empty;
         }
 
+
+        private void SyncChatFile()
+        {
+
+            var lines = Messages.Select(m => $"{m.Sender}|{m.Timestamp}|{m.MessageId}|{m.Content}|{m.IsSeen}");
+
+            System.IO.File.WriteAllLines(_currentChatFilePath, lines);
+
+        }
+
         private void ExecuteBack(object parameter)
         {
 
             _chatService.MessageReceived -= OnMessageReceived;
+
+            _chatService.MessageStatusChanged -= OnMessageStatusChanged;
 
             _mainViewModel.CurrentView = new UserListViewModel(_mainViewModel, _chatService);
 

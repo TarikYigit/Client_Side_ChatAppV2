@@ -38,6 +38,10 @@ namespace ClientSideChatApp.Core
 
         TYPING_STATUS = 12,
 
+        MESSAGE_SENT = 13,
+
+        MESSAGE_SEEN = 14,
+
     }
 
     public class TcpChatService
@@ -49,7 +53,7 @@ namespace ClientSideChatApp.Core
 
         private string _myPassword;
 
-        public event Action<byte, string, string> MessageReceived;
+        public event Action<byte, int, string, string> MessageReceived;
 
         public event Action<List<UserModel>> UserListUpdated;
         public List<UserModel> AllUsers { get; private set; } = new List<UserModel>();
@@ -58,8 +62,7 @@ namespace ClientSideChatApp.Core
 
         public event Action<byte> RegisterSuccessful;
 
-        public event Action<byte, string, string, string> GroupMessageReceived; 
-
+        public event Action<byte, byte, int, string, string, string> GroupMessageReceived;
         public event Action LoginRejected;
 
         public event Action RegisterRejectedUsername;
@@ -70,6 +73,7 @@ namespace ClientSideChatApp.Core
 
         public event Action<byte> UserIsTypingReceived;
 
+        public event Action<int, bool> MessageStatusChanged;
         public Dictionary<byte, ObservableCollection<MessageModel>>  ChatHistories { get; private set; } = new Dictionary<byte, ObservableCollection<MessageModel>>();
 
 
@@ -155,10 +159,10 @@ namespace ClientSideChatApp.Core
 
         }
 
-        public void SendMessage(byte senderId, byte receiverId, string content)
+        public void SendMessage(byte senderId, byte receiverId, string content, int messageid)
         {
 
-            ChatMessageRequest request = new ChatMessageRequest(senderId, receiverId, content);
+            ChatMessageRequest request = new ChatMessageRequest(senderId, receiverId, content, messageid);
 
             SendPacket(request.GetId(), request.ToBytes());
 
@@ -257,18 +261,15 @@ namespace ClientSideChatApp.Core
 
                                 ChatMessageResponse response = new ChatMessageResponse(payload);
 
-                                byte senderId;
+                                byte senderId = response.SenderId;
 
-                                string message, senderName;
+                                int messageId = response.Messageid; 
 
-                                string timeString;
+                                string message = EncryptionManager.DecryptMessage(response.Message);
 
-                                SaveMessagesFromOthersOnClientsPC(response, out senderId, out message, out senderName, out timeString);
+                                string timeString = response.TimeStamp.ToLocalTime().ToString("yyyy:MM:dd:HH:mm:ss");
 
-                                UpdateUIForClient(senderId, message, senderName, timeString);
-
-                                MessageReceived?.Invoke(senderId, message, timeString);
-
+                                MessageReceived?.Invoke(senderId, messageId, message, timeString);
                             }
                             break;
 
@@ -295,6 +296,8 @@ namespace ClientSideChatApp.Core
 
                                 byte groupId = response.GroupId;
 
+                                int messageId = response.messageId; 
+
                                 string message = EncryptionManager.DecryptMessage(response.Message);
 
                                 string timeString = response.TimeStamp.ToLocalTime().ToString("yyyy:MM:dd:HH:mm:ss");
@@ -303,17 +306,7 @@ namespace ClientSideChatApp.Core
 
                                 string senderName = sender != null ? sender.Username : $"User_{senderId}";
 
-                                string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-
-                                string folderPath = System.IO.Path.Combine(appData, "ClientSideChatApp", $"ChatLogs_{_myUsername}");
-
-                                System.IO.Directory.CreateDirectory(folderPath);
-
-                                string chatFilePath = System.IO.Path.Combine(folderPath, $"GroupChat_{groupId}.txt");
-
-                                System.IO.File.AppendAllText(chatFilePath, $"{senderName}|{timeString}|{message}\n");
-
-                                GroupMessageReceived?.Invoke(groupId, senderName, message, timeString);
+                                GroupMessageReceived?.Invoke(groupId, senderId, messageId, senderName, message, timeString);
                             }
                             break;
 
@@ -337,6 +330,24 @@ namespace ClientSideChatApp.Core
                             }
                             break;
 
+                        case MessageId.MESSAGE_SENT: // MESSAGE_DELIVERED
+                            {
+
+                                int deliveredMsgId = BitConverter.ToInt32(payload, 0);
+
+                                MessageStatusChanged?.Invoke(deliveredMsgId, false);
+                            }
+                            break;
+
+                        case MessageId.MESSAGE_SEEN: 
+                            {
+
+                                int seenMsgId = BitConverter.ToInt32(payload, 0);
+
+                                MessageStatusChanged?.Invoke(seenMsgId, true);
+                            }
+                            break;
+
                     }
                 }
             }
@@ -348,7 +359,21 @@ namespace ClientSideChatApp.Core
             }
         }
 
+        public void SendReadReceipt(byte originalSenderId, int messageId)
+        {
+            using (MemoryStream ms = new MemoryStream())
 
+            using (BinaryWriter writer = new BinaryWriter(ms))
+            {
+
+                writer.Write(originalSenderId); 
+
+                writer.Write(messageId);       
+
+                SendPacket((byte)MessageId.MESSAGE_SEEN, ms.ToArray());
+
+            }
+        }
 
         private void UpdateUIForClient(byte senderId, string message, string senderName, string timeString)
         {
@@ -452,9 +477,9 @@ namespace ClientSideChatApp.Core
 
         }
 
-        public void SendGroupMessage(byte senderId, byte groupId, string content)
+        public void SendGroupMessage(byte senderId, byte groupId,  int messageid, string content)
         {
-            GroupChatMessageRequest request = new GroupChatMessageRequest(senderId, groupId, content);
+            GroupChatMessageRequest request = new GroupChatMessageRequest(senderId, groupId, messageid, content);
 
             SendPacket(request.GetId(), request.ToBytes());
         }
@@ -522,6 +547,31 @@ namespace ClientSideChatApp.Core
 
             SendPacket((byte)MessageId.TYPING_STATUS, new byte[] { targetId });
 
+        }
+
+        private void UpdateMessageStatus(int messageId, bool isRead)
+        {
+
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+
+                foreach (var chatHistory in ChatHistories.Values)
+                {
+
+                    var msg = chatHistory.FirstOrDefault(m => m.MessageId == messageId);
+
+                    if (msg != null)
+                    {
+
+                        if (!isRead) msg.IsSent = true;
+
+                        else msg.IsSeen = true;
+
+                        break;
+
+                    }
+                }
+            });
         }
     }
 }
