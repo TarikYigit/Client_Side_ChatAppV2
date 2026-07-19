@@ -57,6 +57,15 @@ namespace ClientSideChatApp.ViewModels
 
             ClientSideChatApp.Helpers.WindowFlashHelper.FlashTaskbar();
 
+            var group = _masterChatService.AllGroups.FirstOrDefault(g => g.GroupId == groupId);
+
+            bool isLookingAtThisGroup = CurrentView is GroupChatViewModel groupVm && groupVm.TargetGroup.GroupId == groupId;
+
+            if (group != null && !isLookingAtThisGroup)
+            {
+                group.UnreadCount++;
+            }
+
             System.Media.SystemSounds.Asterisk.Play();
 
         }
@@ -88,6 +97,14 @@ namespace ClientSideChatApp.ViewModels
 
             ClientSideChatApp.Helpers.WindowFlashHelper.FlashTaskbar();
 
+            var user = _masterChatService.AllUsers.FirstOrDefault(u => u.UserId == senderId);
+
+            bool isLookingAtThisUser = CurrentView is ChatViewModel chatVm && chatVm.TargetUser.UserId == senderId;
+
+            if (user != null && !isLookingAtThisUser)
+            {
+                user.UnreadCount++;
+            }
             System.Media.SystemSounds.Asterisk.Play();
 
         }

@@ -58,6 +58,8 @@ namespace ClientSideChatApp.Core
         public event Action<List<UserModel>> UserListUpdated;
         public List<UserModel> AllUsers { get; private set; } = new List<UserModel>();
 
+        public List<GroupModel> AllGroups { get; private set; } = new List<GroupModel>();
+
         public event Action<byte> LoginSuccessful;
 
         public event Action<byte> RegisterSuccessful;
@@ -315,6 +317,8 @@ namespace ClientSideChatApp.Core
 
                                 GroupListResponse response = new GroupListResponse(payload);
 
+                                AllGroups = response.Groups;
+
                                 GroupListUpdated?.Invoke(response.Groups);
 
                             }
@@ -374,34 +378,6 @@ namespace ClientSideChatApp.Core
 
             }
         }
-
-        private void UpdateUIForClient(byte senderId, string message, string senderName, string timeString)
-        {
-
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-
-                if (!ChatHistories.ContainsKey(senderId))
-                {
-
-                    ChatHistories[senderId] = new ObservableCollection<MessageModel>();
-
-                }
-
-                ChatHistories[senderId].Add(new MessageModel
-                {
-
-                    Sender = senderName,
-
-                    Timestamp = timeString,
-
-                    Content = message
-
-                });
-            });
-        }
-
-
 
         private bool SetupUser(NetworkStream stream, LoginResponse response)
         {
@@ -493,29 +469,6 @@ namespace ClientSideChatApp.Core
 
         }
 
-        private void SaveMessagesFromOthersOnClientsPC(ChatMessageResponse response, out byte senderId, out string message, out string senderName, out string timeString)
-        {
-            senderId = response.SenderId;
-
-            message = EncryptionManager.DecryptMessage(response.Message);
-
-            timeString = response.TimeStamp.ToLocalTime().ToString("yyyy:MM:dd:HH:mm:ss");
-
-            UserModel sender = AllUsers.Find(u => u.UserId == response.SenderId);
-
-            senderName = sender != null ? sender.Username : $"User_{response.SenderId}";
-
-            string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-
-            string folderPath = System.IO.Path.Combine(appData, "ClientSideChatApp", $"ChatLogs_{_myUsername}");
-
-            System.IO.Directory.CreateDirectory(folderPath);
-
-            string chatFilePath = System.IO.Path.Combine(folderPath, $"ChatWith_{response.SenderId}.txt");
-
-            System.IO.File.AppendAllText(chatFilePath, $"{senderName}|{timeString}|{message}\n");
-
-        }
         public void LeaveGroup(byte userId, byte groupId)
         {
 
@@ -547,31 +500,6 @@ namespace ClientSideChatApp.Core
 
             SendPacket((byte)MessageId.TYPING_STATUS, new byte[] { targetId });
 
-        }
-
-        private void UpdateMessageStatus(int messageId, bool isRead)
-        {
-
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-
-                foreach (var chatHistory in ChatHistories.Values)
-                {
-
-                    var msg = chatHistory.FirstOrDefault(m => m.MessageId == messageId);
-
-                    if (msg != null)
-                    {
-
-                        if (!isRead) msg.IsSent = true;
-
-                        else msg.IsSeen = true;
-
-                        break;
-
-                    }
-                }
-            });
         }
     }
 }

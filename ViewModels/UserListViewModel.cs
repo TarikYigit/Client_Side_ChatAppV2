@@ -169,11 +169,15 @@ namespace ClientSideChatApp.ViewModels
             if (SelectedUser != null)
             {
 
+                SelectedUser.UnreadCount = 0; 
+
                 _mainViewModel.CurrentView = new ChatViewModel(_mainViewModel, _chatService, SelectedUser);
 
             }
             else if (SelectedGroup != null)
             {
+
+                SelectedGroup.UnreadCount = 0; 
 
                 _mainViewModel.CurrentView = new GroupChatViewModel(_mainViewModel, _chatService, SelectedGroup);
 

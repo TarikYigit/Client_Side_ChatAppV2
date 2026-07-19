@@ -19,14 +19,14 @@ namespace ClientSideChatApp.Models
         public bool IsSent
         {
             get { return _isSent; }
-            set { _isSent = value; OnPropertyChanged(); } // Alerts XAML to show ✓✓
+            set { _isSent = value; OnPropertyChanged(); } 
         }
 
         private bool _isSeen;
         public bool IsSeen
         {
             get { return _isSeen; }
-            set { _isSeen = value; OnPropertyChanged(); } // Alerts XAML to turn ticks Blue
+            set { _isSeen = value; OnPropertyChanged(); } 
         }
 
         public int MessageId { get; set; }
