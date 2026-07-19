@@ -15,6 +15,8 @@ namespace ClientSideChatApp.ViewModels
 
         private string _currentChatFilePath;
 
+        public RelayCommand AttachImageCommand { get; set; }
+
         private List<UserModel> _availableUsers;
 
         private int? _editingMessageId = null;
@@ -88,6 +90,8 @@ namespace ClientSideChatApp.ViewModels
             _chatService.GroupMessageEdited += OnGroupMessageEdited;
 
             DeleteMessageCommand = new RelayCommand(ExecuteDeleteMessage);
+
+            AttachImageCommand = new RelayCommand(ExecuteAttachImage);
         }
 
         private void ExecuteBeginEdit(object parameter)
@@ -97,6 +101,8 @@ namespace ClientSideChatApp.ViewModels
             {
 
                 if (msg.Content == "🚫 This message was deleted") return;
+
+                if (msg.Content != null && msg.Content.StartsWith("[IMG:")) return;
 
                 InputText = msg.Content;
 
@@ -126,6 +132,61 @@ namespace ClientSideChatApp.ViewModels
                         SyncChatFile();
                     }
                 });
+            }
+        }
+
+        private void ExecuteAttachImage(object parameter)
+        {
+            var openFileDialog = new Microsoft.Win32.OpenFileDialog
+            {
+
+                Filter = "Image files (*.png;*.jpg;*.jpeg)|*.png;*.jpg;*.jpeg|All files (*.*)|*.*"
+
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+
+                string selectedPath = openFileDialog.FileName;
+
+                string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+
+                string imageFolder = System.IO.Path.Combine(appData, "ClientSideChatApp", "Images");
+
+                System.IO.Directory.CreateDirectory(imageFolder);
+
+                string fileName = Guid.NewGuid().ToString() + System.IO.Path.GetExtension(selectedPath);
+
+                string savePath = System.IO.Path.Combine(imageFolder, fileName);
+
+                System.IO.File.Copy(selectedPath, savePath);
+
+                int generatedMessageId = new Random().Next(1, int.MaxValue);
+
+                string vaultText = $"[IMG:{savePath}]";
+
+                Messages.Add(new MessageModel
+                {
+
+                    Sender = _mainViewModel.MyUsername,
+
+                    Timestamp = DateTime.Now.ToString("yyyy:MM:dd:HH:mm:ss"),
+
+                    MessageId = generatedMessageId,
+
+                    ImagePath = savePath,
+
+                    Content = vaultText,
+
+                    IsMyMessage = true
+
+                });
+
+                SyncChatFile();
+
+                byte[] imageBytes = System.IO.File.ReadAllBytes(savePath);
+
+                _chatService.SendGroupImageMessage((byte)_mainViewModel.MyUserId, (byte)TargetGroup.GroupId, generatedMessageId, imageBytes);
             }
         }
 
@@ -250,6 +311,7 @@ namespace ClientSideChatApp.ViewModels
 
             if (_editingMessageId.HasValue)
             {
+
                 _chatService.SendEditGroupMessage(_mainViewModel.MyUserId, (byte)TargetGroup.GroupId, _editingMessageId.Value, cipherText);
 
                 var msgToEdit = Messages.FirstOrDefault(m => m.MessageId == _editingMessageId.Value);
@@ -340,6 +402,7 @@ namespace ClientSideChatApp.ViewModels
 
         private void ExecuteBack(object parameter)
         {
+
             _chatService.GroupMessageReceived -= OnGroupMessageReceived;
 
             _chatService.MessageStatusChanged -= OnMessageStatusChanged;

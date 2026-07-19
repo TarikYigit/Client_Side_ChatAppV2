@@ -103,7 +103,9 @@ namespace ClientSideChatApp.ViewModels
 
             if (user != null && !isLookingAtThisUser)
             {
+
                 user.UnreadCount++;
+
             }
             System.Media.SystemSounds.Asterisk.Play();
 

@@ -200,7 +200,9 @@
                                         </StackPanel>
 
                                         <!-- Message Content Row (Properly placed below the header) -->
-                                        <TextBlock x:Name="ContentText" Text="{Binding Content}" FontSize="15" Foreground="White" TextWrapping="Wrap"/>
+                                        <Image Source="{Binding ImagePath}" Visibility="{Binding HasImage, Converter={StaticResource BoolToVis}}" MaxWidth="250" MaxHeight="250" Margin="0,0,0,5" Stretch="Uniform" HorizontalAlignment="Left"/>
+
+                                        <TextBlock x:Name="ContentText" Text="{Binding DisplayContent}" FontSize="15" Foreground="White" TextWrapping="Wrap"/>
                                     </StackPanel>
                                 </Border>
                             </Grid>
@@ -233,13 +235,34 @@
                 <!-- Input Area -->
                 <Grid Grid.Row="2" Margin="0,10,0,0">
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <!-- NEW: Column for the attachment button -->
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="90"/>
                     </Grid.ColumnDefinitions>
-                    <Border Grid.Column="0" Background="#2A2A35" CornerRadius="8" Padding="12,10">
+
+                    <!-- NEW: Attachment Button -->
+                    <Button Grid.Column="0" Command="{Binding AttachImageCommand}" Margin="0,0,10,0" Width="45" Cursor="Hand" ToolTip="Attach Image">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="BtnBorder" Background="#2A2A35" CornerRadius="8">
+                                    <!-- A simple plus icon for now -->
+                                    <TextBlock Text="+" Foreground="White" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-2,0,0"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="BtnBorder" Property="Background" Value="#3A3A45"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+
+                    <Border Grid.Column="1" Background="#2A2A35" CornerRadius="8" Padding="12,10">
                         <TextBox Text="{Binding InputText, UpdateSourceTrigger=PropertyChanged}" Foreground="White" Background="Transparent" BorderThickness="0" CaretBrush="White" FontSize="15"/>
                     </Border>
-                    <Button Grid.Column="1" Command="{Binding SendCommand}" Margin="10,0,0,0" Cursor="Hand">
+
+                    <Button Grid.Column="2" Command="{Binding SendCommand}" Margin="10,0,0,0" Cursor="Hand">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
                                 <Border x:Name="BtnBorder" Background="#0078D7" CornerRadius="8">

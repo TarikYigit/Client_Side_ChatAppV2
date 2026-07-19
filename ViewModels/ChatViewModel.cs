@@ -1,10 +1,11 @@
-﻿using System;
+﻿using ClientSideChatApp.Core;
+using ClientSideChatApp.Models;
+using System;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
-using ClientSideChatApp.Core;
-using ClientSideChatApp.Models;
 
 namespace ClientSideChatApp.ViewModels
 {
@@ -23,12 +24,17 @@ namespace ClientSideChatApp.ViewModels
         public UserModel TargetUser { get; set; }
         public GroupModel TargetGroup { get; set; }
 
+        public RelayCommand AttachImageCommand { get; set; }
+
         public string HeaderText
         {
             get
             {
+
                 if (TargetGroup != null) return $"Group Chat: {TargetGroup.GroupName}";
+
                 return TargetUser != null ? $"Chat with {TargetUser.Username}" : "Chat";
+
             }
         }
 
@@ -37,14 +43,20 @@ namespace ClientSideChatApp.ViewModels
         private string _inputText;
         public string InputText
         {
+
             get { return _inputText; }
             set
             {
+
                 _inputText = value;
+
                 OnPropertyChanged();
+
                 if (TargetUser != null && !string.IsNullOrEmpty(_inputText))
                 {
+
                     _chatService.SendTypingStatus(_mainViewModel.MyUserId, TargetUser.UserId);
+
                 }
             }
         }
@@ -122,6 +134,8 @@ namespace ClientSideChatApp.ViewModels
 
             DeleteMessageCommand = new RelayCommand(ExecuteDeleteMessage);
 
+            AttachImageCommand = new RelayCommand(ExecuteAttachImage);
+
             _chatService.UserIsTypingReceived += (typerId) =>
             {
 
@@ -140,6 +154,63 @@ namespace ClientSideChatApp.ViewModels
                 }
             };
         }
+
+        private void ExecuteAttachImage(object parameter)
+        {
+
+            var openFileDialog = new Microsoft.Win32.OpenFileDialog
+            {
+
+                Filter = "Image files (*.png;*.jpg;*.jpeg)|*.png;*.jpg;*.jpeg|All files (*.*)|*.*"
+
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+
+                string selectedPath = openFileDialog.FileName;
+
+                string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+
+                string imageFolder = Path.Combine(appData, "ClientSideChatApp", "Images");
+
+                Directory.CreateDirectory(imageFolder);
+
+                string fileName = Guid.NewGuid().ToString() + Path.GetExtension(selectedPath);
+
+                string savePath = Path.Combine(imageFolder, fileName);
+
+                File.Copy(selectedPath, savePath);
+
+                int generatedMessageId = new Random().Next(1, int.MaxValue);
+
+                string vaultText = $"[IMG:{savePath}]";
+
+                Messages.Add(new MessageModel
+                {
+
+                    Sender = _mainViewModel.MyUsername,
+
+                    Timestamp = DateTime.Now.ToString("yyyy:MM:dd:HH:mm:ss"),
+
+                    MessageId = generatedMessageId,
+
+                    ImagePath = savePath,
+
+                    Content = vaultText, 
+
+                    IsMyMessage = true
+                });
+
+                SyncChatFile();
+
+                byte[] imageBytes = File.ReadAllBytes(savePath);
+
+                _chatService.SendImageMessage((byte)_mainViewModel.MyUserId, (byte)TargetUser.UserId, generatedMessageId, imageBytes);
+            }
+        }
+
+
 
         private void ExecuteDeleteMessage(object parameter)
         {
@@ -166,6 +237,8 @@ namespace ClientSideChatApp.ViewModels
             {
 
                 if (msg.Content == "🚫 This message was deleted") return;
+
+                if (msg.Content != null && msg.Content.StartsWith("[IMG:")) return;
 
                 InputText = msg.Content;
 

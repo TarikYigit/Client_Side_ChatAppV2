@@ -12,9 +12,13 @@ public class GroupModel : ObservableObject
         get { return _unreadCount; }
         set
         {
+
             _unreadCount = value;
+
             OnPropertyChanged();
+
             OnPropertyChanged(nameof(HasUnreadMessages));
+
         }
     }
 
