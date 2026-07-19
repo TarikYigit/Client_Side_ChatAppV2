@@ -33,5 +33,26 @@ namespace ClientSideChatApp.Models
 
         public bool IsMyMessage { get; set; }
 
+        private string _content;
+        public string newContent
+        {
+            get { return _content; }
+            set { _content = value; OnPropertyChanged(); }
+        }
+
+        private bool _isEditing;
+        public bool IsEditing
+        {
+            get { return _isEditing; }
+            set { _isEditing = value; OnPropertyChanged(); }
+        }
+
+        private bool _isEdited;
+        public bool IsEdited
+        {
+            get { return _isEdited; }
+            set { _isEdited = value; OnPropertyChanged(); }
+        }
+
     }
 }

@@ -74,6 +74,14 @@
                         <DataTemplate>
                             <Grid Margin="5,5,5,10">
                                 <Border x:Name="BubbleBorder" CornerRadius="12,12,12,0" Padding="12" MaxWidth="400" HorizontalAlignment="Left" Background="#2A2A35">
+                                    <Border.ContextMenu>
+                                        <ContextMenu Background="#1E1E24" Foreground="White" BorderBrush="#3A3A45">
+                                            <!-- Passes the specific MessageModel to the command! -->
+                                            <MenuItem Header="Edit Message" 
+                                                Command="{Binding DataContext.BeginEditCommand, RelativeSource={RelativeSource AncestorType=ListBox}}" 
+                                                CommandParameter="{Binding}"/>
+                                        </ContextMenu>
+                                    </Border.ContextMenu>
                                     <StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
                                             <!-- THE FIX: Bright Ice Blue for the sender's name -->
@@ -81,7 +89,7 @@
 
                                             <!-- THE FIX: Added x:Name and changed default color to a crisp Light Gray -->
                                             <TextBlock x:Name="TimeText" Text="{Binding Timestamp}" FontSize="11" Foreground="#A0A0A0" Margin="10,0,0,0" VerticalAlignment="Center"/>
-
+                                            
                                             <TextBlock x:Name="TickText" FontSize="11" Margin="6,0,0,0" VerticalAlignment="Center" FontWeight="Bold" Visibility="Collapsed">
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">

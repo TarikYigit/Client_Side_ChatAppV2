@@ -13,6 +13,9 @@ namespace ClientSideChatApp.ViewModels
 
         private string _currentChatFilePath;
 
+        private int? _editingMessageId = null;
+        public RelayCommand BeginEditCommand { get; set; }
+
         public UserModel TargetUser { get; set; }
         public GroupModel TargetGroup { get; set; }
 
@@ -59,6 +62,9 @@ namespace ClientSideChatApp.ViewModels
 
         public RelayCommand SendCommand { get; set; }
         public RelayCommand BackCommand { get; set; }
+
+        public RelayCommand EnterEditModeCommand { get; set; }
+        public RelayCommand ConfirmEditCommand { get; set; }
 
 
         public ChatViewModel(MainViewModel mainViewModel, TcpChatService chatService, UserModel targetUser)
@@ -117,6 +123,10 @@ namespace ClientSideChatApp.ViewModels
 
             _chatService.FetchMissedMessages(_mainViewModel.MyUserId);
 
+            BeginEditCommand = new RelayCommand(ExecuteBeginEdit);
+
+            _chatService.MessageEdited += OnMessageEdited;
+
             _chatService.UserIsTypingReceived += (typerId) =>
             {
 
@@ -135,6 +145,19 @@ namespace ClientSideChatApp.ViewModels
                     });
                 }
             };
+        }
+
+        private void ExecuteBeginEdit(object parameter)
+        {
+
+            if (parameter is MessageModel msg && msg.IsMyMessage)
+            {
+
+                InputText = msg.Content;
+
+                _editingMessageId = msg.MessageId;
+
+            }
         }
 
         private void LoadChatHistory()
@@ -258,6 +281,30 @@ namespace ClientSideChatApp.ViewModels
 
             string cipherText = EncryptionManager.EncryptMessage(InputText);
 
+            if (_editingMessageId.HasValue)
+            {
+                _chatService.SendEditMessage(_mainViewModel.MyUserId, TargetUser.UserId, _editingMessageId.Value, cipherText);
+
+                var msgToEdit = Messages.FirstOrDefault(m => m.MessageId == _editingMessageId.Value);
+
+                if (msgToEdit != null)
+                {
+
+                    msgToEdit.Content = InputText;
+
+                    msgToEdit.IsEdited = true;
+
+                    SyncChatFile(); 
+
+                }
+
+                _editingMessageId = null;
+
+                InputText = string.Empty;
+
+                return;
+            }
+
             string currentTime = DateTime.Now.ToString("yyyy:MM:dd:HH:mm:ss");
 
             int generatedMessageId = new Random().Next(1, int.MaxValue);
@@ -302,6 +349,30 @@ namespace ClientSideChatApp.ViewModels
             InputText = string.Empty;
         }
 
+        private void OnMessageEdited(byte senderId, int messageId, string newContent)
+        {
+            if (senderId == TargetUser.UserId)
+            {
+
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+
+                    var msg = Messages.FirstOrDefault(m => m.MessageId == messageId);
+
+                    if (msg != null)
+                    {
+
+                        msg.Content = newContent;
+
+                        msg.IsEdited = true;
+
+                        SyncChatFile();
+
+                    }
+                });
+            }
+        }
+
 
         private void SyncChatFile()
         {
@@ -312,8 +383,33 @@ namespace ClientSideChatApp.ViewModels
 
         }
 
+        private void ExecuteEnterEditMode(object parameter)
+        {
+            if (parameter is MessageModel msg)
+            {
+                msg.IsEditing = true;
+            }
+        }
+
+        private void ExecuteConfirmEdit(object parameter)
+        {
+            if (parameter is MessageModel msg)
+            {
+                string cipherText = EncryptionManager.EncryptMessage(msg.Content);
+
+                _chatService.SendEditMessage(_mainViewModel.MyUserId, TargetUser.UserId, msg.MessageId, cipherText);
+
+                msg.IsEditing = false;
+
+                msg.IsEdited = true;
+
+                SyncChatFile();
+            }
+        }
+
         private void ExecuteBack(object parameter)
         {
+            _chatService.MessageEdited -= OnMessageEdited;
 
             _chatService.MessageReceived -= OnMessageReceived;
 

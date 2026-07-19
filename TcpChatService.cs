@@ -42,6 +42,10 @@ namespace ClientSideChatApp.Core
 
         MESSAGE_SEEN = 14,
 
+        EDIT_MESSAGE = 16,
+
+        EDIT_GROUP_MESSAGE = 17,
+
     }
 
     public class TcpChatService
@@ -52,6 +56,10 @@ namespace ClientSideChatApp.Core
         private string _myUsername;
 
         private string _myPassword;
+
+        public event Action<byte, int, string> MessageEdited;
+
+        public event Action<byte, byte, int, string> GroupMessageEdited;
 
         public event Action<byte, int, string, string> MessageReceived;
 
@@ -352,6 +360,37 @@ namespace ClientSideChatApp.Core
                             }
                             break;
 
+                        case MessageId.EDIT_MESSAGE:
+                            {
+
+                                ChatMessageResponse response = new ChatMessageResponse(payload);
+
+                                int messageId = response.Messageid;
+
+                                byte senderId = response.SenderId;
+
+                                string newContent = EncryptionManager.DecryptMessage(response.Message);
+
+                                MessageEdited?.Invoke(senderId, messageId, newContent);
+                            }
+                            break;
+
+                        case MessageId.EDIT_GROUP_MESSAGE:
+                            {
+                                GroupChatMessageResponse response = new GroupChatMessageResponse(payload);
+
+                                int messageId = response.messageId;
+
+                                byte senderId = response.SenderId;
+
+                                byte groupId = response.GroupId;
+
+                                string newContent = EncryptionManager.DecryptMessage(response.Message);
+
+                                GroupMessageEdited?.Invoke(groupId, senderId, messageId, newContent);
+                            }
+                            break;
+
                     }
                 }
             }
@@ -499,6 +538,24 @@ namespace ClientSideChatApp.Core
         {
 
             SendPacket((byte)MessageId.TYPING_STATUS, new byte[] { targetId });
+
+        }
+
+        public void SendEditMessage(byte senderId, byte receiverId, int messageId, string newContent)
+        {
+
+            ChatMessageRequest request = new ChatMessageRequest(senderId, receiverId, newContent, messageId);
+
+            SendPacket((byte)MessageId.EDIT_MESSAGE, request.ToBytes());
+
+        }
+
+        public void SendEditGroupMessage(byte senderId, byte groupId, int messageId, string newContent)
+        {
+
+            GroupChatMessageRequest request = new GroupChatMessageRequest(senderId, groupId, messageId, newContent);
+
+            SendPacket((byte)MessageId.EDIT_GROUP_MESSAGE, request.ToBytes());
 
         }
     }
