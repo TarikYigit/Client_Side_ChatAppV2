@@ -1,4 +1,7 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using ClientSideChatApp.Core;
 using ClientSideChatApp.Models;
@@ -14,8 +17,9 @@ namespace ClientSideChatApp.ViewModels
         private string _currentChatFilePath;
 
         private int? _editingMessageId = null;
-        public RelayCommand BeginEditCommand { get; set; }
 
+        public RelayCommand DeleteMessageCommand { get; set; }
+        public RelayCommand BeginEditCommand { get; set; }
         public UserModel TargetUser { get; set; }
         public GroupModel TargetGroup { get; set; }
 
@@ -23,11 +27,8 @@ namespace ClientSideChatApp.ViewModels
         {
             get
             {
-
                 if (TargetGroup != null) return $"Group Chat: {TargetGroup.GroupName}";
-
                 return TargetUser != null ? $"Chat with {TargetUser.Username}" : "Chat";
-
             }
         }
 
@@ -36,36 +37,30 @@ namespace ClientSideChatApp.ViewModels
         private string _inputText;
         public string InputText
         {
-
             get { return _inputText; }
-
-            set { 
-                _inputText = value; 
+            set
+            {
+                _inputText = value;
                 OnPropertyChanged();
                 if (TargetUser != null && !string.IsNullOrEmpty(_inputText))
                 {
-
                     _chatService.SendTypingStatus(_mainViewModel.MyUserId, TargetUser.UserId);
-
                 }
             }
-
         }
 
         private bool _isTyping;
         public bool IsTyping
         {
+
             get { return _isTyping; }
 
             set { _isTyping = value; OnPropertyChanged(); }
+
         }
 
         public RelayCommand SendCommand { get; set; }
         public RelayCommand BackCommand { get; set; }
-
-        public RelayCommand EnterEditModeCommand { get; set; }
-        public RelayCommand ConfirmEditCommand { get; set; }
-
 
         public ChatViewModel(MainViewModel mainViewModel, TcpChatService chatService, UserModel targetUser)
         {
@@ -79,7 +74,6 @@ namespace ClientSideChatApp.ViewModels
             InitializeChat();
         }
 
-
         public ChatViewModel(MainViewModel mainViewModel, TcpChatService chatService, GroupModel targetGroup)
         {
 
@@ -91,7 +85,6 @@ namespace ClientSideChatApp.ViewModels
 
             InitializeChat();
         }
-
 
         private void InitializeChat()
         {
@@ -117,15 +110,17 @@ namespace ClientSideChatApp.ViewModels
 
             BackCommand = new RelayCommand(ExecuteBack);
 
+            BeginEditCommand = new RelayCommand(ExecuteBeginEdit);
+
             _chatService.MessageReceived += OnMessageReceived;
 
-            _chatService.MessageStatusChanged += OnMessageStatusChanged; 
+            _chatService.MessageStatusChanged += OnMessageStatusChanged;
+
+            _chatService.MessageEdited += OnMessageEdited;
 
             _chatService.FetchMissedMessages(_mainViewModel.MyUserId);
 
-            BeginEditCommand = new RelayCommand(ExecuteBeginEdit);
-
-            _chatService.MessageEdited += OnMessageEdited;
+            DeleteMessageCommand = new RelayCommand(ExecuteDeleteMessage);
 
             _chatService.UserIsTypingReceived += (typerId) =>
             {
@@ -135,7 +130,6 @@ namespace ClientSideChatApp.ViewModels
 
                     Application.Current.Dispatcher.Invoke(async () =>
                     {
-
                         IsTyping = true;
 
                         await Task.Delay(2000);
@@ -147,40 +141,62 @@ namespace ClientSideChatApp.ViewModels
             };
         }
 
+        private void ExecuteDeleteMessage(object parameter)
+        {
+            if (parameter is MessageModel msg && msg.IsMyMessage)
+            {
+                string deletedText = "🚫 This message was deleted";
+
+                string cipherText = EncryptionManager.EncryptMessage(deletedText);
+
+                _chatService.SendEditMessage(_mainViewModel.MyUserId, TargetUser.UserId, msg.MessageId, cipherText);
+
+                msg.Content = deletedText;
+
+                msg.IsEdited = false; 
+
+                SyncChatFile();
+            }
+        }
+
         private void ExecuteBeginEdit(object parameter)
         {
 
             if (parameter is MessageModel msg && msg.IsMyMessage)
             {
 
+                if (msg.Content == "🚫 This message was deleted") return;
+
                 InputText = msg.Content;
 
                 _editingMessageId = msg.MessageId;
-
             }
         }
 
         private void LoadChatHistory()
         {
-            bool fileNeedsSync = false; 
+
+            bool fileNeedsSync = false;
 
             if (System.IO.File.Exists(_currentChatFilePath))
             {
+
                 string[] savedMessages = System.IO.File.ReadAllLines(_currentChatFilePath);
 
                 foreach (string line in savedMessages)
                 {
+
                     string[] parts = line.Split(new char[] { '|' }, 5);
 
                     if (parts.Length == 5)
                     {
-                        bool isSeen = bool.Parse(parts[4]);
 
+                        bool isSeen = bool.Parse(parts[4]);
 
                         if (TargetUser != null && parts[0] == TargetUser.Username && isSeen == false)
                         {
 
-                            isSeen = true; 
+                            isSeen = true;
 
                             fileNeedsSync = true;
 
@@ -220,8 +236,10 @@ namespace ClientSideChatApp.ViewModels
 
         private void OnMessageReceived(byte senderId, int messageId, string messageContent, string timeString)
         {
+
             if (TargetUser != null && senderId == TargetUser.UserId)
             {
+
                 Application.Current.Dispatcher.Invoke(() =>
                 {
 
@@ -245,20 +263,18 @@ namespace ClientSideChatApp.ViewModels
                     });
 
                     SyncChatFile();
-
                     _chatService.SendReadReceipt(senderId, messageId);
-
                 });
             }
         }
 
         private void OnMessageStatusChanged(int messageId, bool isRead)
         {
+
             Application.Current.Dispatcher.Invoke(() =>
             {
 
                 var msg = Messages.FirstOrDefault(m => m.MessageId == messageId);
-
                 if (msg != null)
                 {
 
@@ -294,7 +310,7 @@ namespace ClientSideChatApp.ViewModels
 
                     msgToEdit.IsEdited = true;
 
-                    SyncChatFile(); 
+                    SyncChatFile();
 
                 }
 
@@ -322,10 +338,9 @@ namespace ClientSideChatApp.ViewModels
 
             }
 
-            string fileLine = $"{_mainViewModel.MyUsername}|{currentTime}|{generatedMessageId}|{InputText}\n";
+            string fileLine = $"{_mainViewModel.MyUsername}|{currentTime}|{generatedMessageId}|{InputText}|False\n";
 
             System.IO.File.AppendAllText(_currentChatFilePath, fileLine);
-
 
             Messages.Add(new MessageModel
             {
@@ -351,12 +366,11 @@ namespace ClientSideChatApp.ViewModels
 
         private void OnMessageEdited(byte senderId, int messageId, string newContent)
         {
-            if (senderId == TargetUser.UserId)
-            {
 
+            if (TargetUser != null && senderId == TargetUser.UserId)
+            {
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-
                     var msg = Messages.FirstOrDefault(m => m.MessageId == messageId);
 
                     if (msg != null)
@@ -369,10 +383,13 @@ namespace ClientSideChatApp.ViewModels
                         SyncChatFile();
 
                     }
+                    else
+                    {
+
+                    }
                 });
             }
         }
-
 
         private void SyncChatFile()
         {
@@ -383,32 +400,9 @@ namespace ClientSideChatApp.ViewModels
 
         }
 
-        private void ExecuteEnterEditMode(object parameter)
-        {
-            if (parameter is MessageModel msg)
-            {
-                msg.IsEditing = true;
-            }
-        }
-
-        private void ExecuteConfirmEdit(object parameter)
-        {
-            if (parameter is MessageModel msg)
-            {
-                string cipherText = EncryptionManager.EncryptMessage(msg.Content);
-
-                _chatService.SendEditMessage(_mainViewModel.MyUserId, TargetUser.UserId, msg.MessageId, cipherText);
-
-                msg.IsEditing = false;
-
-                msg.IsEdited = true;
-
-                SyncChatFile();
-            }
-        }
-
         private void ExecuteBack(object parameter)
         {
+
             _chatService.MessageEdited -= OnMessageEdited;
 
             _chatService.MessageReceived -= OnMessageReceived;

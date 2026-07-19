@@ -10,10 +10,15 @@ namespace ClientSideChatApp.ViewModels
     public class GroupChatViewModel : ObservableObject
     {
         private MainViewModel _mainViewModel;
+
         private TcpChatService _chatService;
+
         private string _currentChatFilePath;
+
         private List<UserModel> _availableUsers;
 
+        private int? _editingMessageId = null;
+        public RelayCommand BeginEditCommand { get; set; }
         public GroupModel TargetGroup { get; set; }
         public string HeaderText => $"Group Chat: {TargetGroup.GroupName}";
 
@@ -31,6 +36,8 @@ namespace ClientSideChatApp.ViewModels
 
         public RelayCommand SendCommand { get; set; }
         public RelayCommand BackCommand { get; set; }
+
+        public RelayCommand DeleteMessageCommand { get; set; }
         public RelayCommand AddUserToGroupCommand { get; set; }
         public RelayCommand LeaveGroupCommand { get; set; }
 
@@ -75,6 +82,51 @@ namespace ClientSideChatApp.ViewModels
             _chatService.MessageStatusChanged += OnMessageStatusChanged;
 
             _chatService.FetchMissedMessages(_mainViewModel.MyUserId);
+
+            BeginEditCommand = new RelayCommand(ExecuteBeginEdit);
+
+            _chatService.GroupMessageEdited += OnGroupMessageEdited;
+
+            DeleteMessageCommand = new RelayCommand(ExecuteDeleteMessage);
+        }
+
+        private void ExecuteBeginEdit(object parameter)
+        {
+
+            if (parameter is MessageModel msg && msg.IsMyMessage)
+            {
+
+                if (msg.Content == "🚫 This message was deleted") return;
+
+                InputText = msg.Content;
+
+                _editingMessageId = msg.MessageId;
+
+            }
+        }
+
+        private void OnGroupMessageEdited(byte groupId, byte senderId, int messageId, string newContent)
+        {
+
+            if (TargetGroup != null && groupId == TargetGroup.GroupId)
+            {
+
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+
+                    var msg = Messages.FirstOrDefault(m => m.MessageId == messageId);
+
+                    if (msg != null)
+                    {
+
+                        msg.Content = newContent;
+
+                        msg.IsEdited = true;
+
+                        SyncChatFile();
+                    }
+                });
+            }
         }
 
         private void SyncChatFile()
@@ -196,6 +248,30 @@ namespace ClientSideChatApp.ViewModels
 
             string cipherText = EncryptionManager.EncryptMessage(InputText);
 
+            if (_editingMessageId.HasValue)
+            {
+                _chatService.SendEditGroupMessage(_mainViewModel.MyUserId, (byte)TargetGroup.GroupId, _editingMessageId.Value, cipherText);
+
+                var msgToEdit = Messages.FirstOrDefault(m => m.MessageId == _editingMessageId.Value);
+
+                if (msgToEdit != null)
+                {
+
+                    msgToEdit.Content = InputText;
+
+                    msgToEdit.IsEdited = true;
+
+                    SyncChatFile();
+
+                }
+
+                _editingMessageId = null;
+
+                InputText = string.Empty;
+
+                return;
+            }
+
             string currentTime = DateTime.Now.ToString("yyyy:MM:dd:HH:mm:ss");
 
             int generatedMessageId = new Random().Next(1, int.MaxValue);
@@ -223,6 +299,25 @@ namespace ClientSideChatApp.ViewModels
 
             SyncChatFile();
             InputText = string.Empty;
+        }
+
+        private void ExecuteDeleteMessage(object parameter)
+        {
+            if (parameter is MessageModel msg && msg.IsMyMessage)
+            {
+
+                string deletedText = "🚫 This message was deleted";
+
+                string cipherText = EncryptionManager.EncryptMessage(deletedText);
+
+                _chatService.SendEditGroupMessage(_mainViewModel.MyUserId, (byte)TargetGroup.GroupId, msg.MessageId, cipherText);
+
+                msg.Content = deletedText;
+
+                msg.IsEdited = false;
+
+                SyncChatFile();
+            }
         }
 
         private void ExecuteAddUser(object parameter)

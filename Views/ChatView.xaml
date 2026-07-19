@@ -5,6 +5,39 @@
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
+        <Style TargetType="ContextMenu">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ContextMenu">
+                        <Border Background="#1E1E24" BorderBrush="#3A3A45" BorderThickness="1" CornerRadius="6" Padding="4">
+                            <ItemsPresenter/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="MenuItem">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="MenuItem">
+                        <Border x:Name="ItemBorder" Background="Transparent" CornerRadius="4" Padding="25,10">
+                            <ContentPresenter ContentSource="Header" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background" Value="#3A3A45"/>
+                                <Setter Property="Cursor" Value="Hand"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
 
     <Grid>
@@ -73,29 +106,53 @@
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <Grid Margin="5,5,5,10">
-                                <Border x:Name="BubbleBorder" CornerRadius="12,12,12,0" Padding="12" MaxWidth="400" HorizontalAlignment="Left" Background="#2A2A35">
+
+                                <Border x:Name="BubbleBorder" CornerRadius="12,12,12,0" Padding="12" MaxWidth="400" HorizontalAlignment="Left" Background="#2A2A35"
+                                        Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=ListBox}}">
+
                                     <Border.ContextMenu>
-                                        <ContextMenu Background="#1E1E24" Foreground="White" BorderBrush="#3A3A45">
-                                            <!-- Passes the specific MessageModel to the command! -->
+                                        <ContextMenu>
                                             <MenuItem Header="Edit Message" 
-                                                Command="{Binding DataContext.BeginEditCommand, RelativeSource={RelativeSource AncestorType=ListBox}}" 
-                                                CommandParameter="{Binding}"/>
+                                                      Command="{Binding PlacementTarget.Tag.BeginEditCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
+                                                      CommandParameter="{Binding}"/>
+                                            <MenuItem Header="Delete Message" Command="{Binding PlacementTarget.Tag.DeleteMessageCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}">
+                                                <MenuItem.Style>
+                                                    <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
+                                                        <Style.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter Property="Foreground" Value="#FF4C4C"/>
+                                                            </Trigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </MenuItem.Style>
+                                            </MenuItem>
                                         </ContextMenu>
                                     </Border.ContextMenu>
-                                    <StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                                            <!-- THE FIX: Bright Ice Blue for the sender's name -->
-                                            <TextBlock x:Name="SenderText" Text="{Binding Sender}" FontWeight="Bold" FontSize="13" Foreground="#4DB8FF"/>
 
-                                            <!-- THE FIX: Added x:Name and changed default color to a crisp Light Gray -->
+                                    <StackPanel>
+                                        <!-- Header Row (Sender, Time, Edited flag) -->
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                                            <TextBlock x:Name="SenderText" Text="{Binding Sender}" FontWeight="Bold" FontSize="13" Foreground="#4DB8FF"/>
                                             <TextBlock x:Name="TimeText" Text="{Binding Timestamp}" FontSize="11" Foreground="#A0A0A0" Margin="10,0,0,0" VerticalAlignment="Center"/>
-                                            
+
+                                            <TextBlock Text="(edited)" FontSize="10" FontStyle="Italic" Foreground="#888888" Margin="6,0,0,0" VerticalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsEdited}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+
                                             <TextBlock x:Name="TickText" FontSize="11" Margin="6,0,0,0" VerticalAlignment="Center" FontWeight="Bold" Visibility="Collapsed">
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">
                                                         <Setter Property="Text" Value="✓"/>
                                                         <Setter Property="Foreground" Value="#D9EBFF"/>
-                                                        <!-- Light tick for visibility -->
                                                         <Style.Triggers>
                                                             <DataTrigger Binding="{Binding IsSent}" Value="True">
                                                                 <Setter Property="Text" Value="✓✓"/>
@@ -103,7 +160,6 @@
                                                             <DataTrigger Binding="{Binding IsSeen}" Value="True">
                                                                 <Setter Property="Text" Value="✓✓"/>
                                                                 <Setter Property="Foreground" Value="#000000"/>
-                                                                <!-- Dark black for fully read -->
                                                             </DataTrigger>
                                                         </Style.Triggers>
                                                     </Style>
@@ -111,7 +167,8 @@
                                             </TextBlock>
                                         </StackPanel>
 
-                                        <TextBlock Text="{Binding Content}" FontSize="15" Foreground="White" TextWrapping="Wrap"/>
+                                        <!-- Message Content Row (Properly placed below the header) -->
+                                        <TextBlock x:Name="ContentText" Text="{Binding Content}" FontSize="15" Foreground="White" TextWrapping="Wrap"/>
                                     </StackPanel>
                                 </Border>
                             </Grid>
@@ -123,9 +180,18 @@
                                     <Setter TargetName="BubbleBorder" Property="CornerRadius" Value="12,12,0,12"/>
                                     <Setter TargetName="SenderText" Property="Visibility" Value="Collapsed"/>
                                     <Setter TargetName="TickText" Property="Visibility" Value="Visible"/>
-
-                                    <!-- THE FIX: When the bubble turns Blue, change the time color to Pale White so it's perfectly readable -->
                                     <Setter TargetName="TimeText" Property="Foreground" Value="#D9EBFF"/>
+                                </DataTrigger>
+
+                                <DataTrigger Binding="{Binding Content}" Value="[This message was deleted]">
+                                    <Setter TargetName="ContentText" Property="FontStyle" Value="Italic"/>
+                                    <Setter TargetName="ContentText" Property="Foreground" Value="#A0A0A0"/>
+                                    <Setter TargetName="BubbleBorder" Property="ContextMenu" Value="{x:Null}"/>
+                                    <Setter TargetName="TickText" Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+
+                                <DataTrigger Binding="{Binding IsMyMessage}" Value="False">
+                                    <Setter TargetName="BubbleBorder" Property="ContextMenu" Value="{x:Null}"/>
                                 </DataTrigger>
                             </DataTemplate.Triggers>
                         </DataTemplate>

@@ -342,7 +342,7 @@ namespace ClientSideChatApp.Core
                             }
                             break;
 
-                        case MessageId.MESSAGE_SENT: // MESSAGE_DELIVERED
+                        case MessageId.MESSAGE_SENT: 
                             {
 
                                 int deliveredMsgId = BitConverter.ToInt32(payload, 0);
@@ -359,10 +359,8 @@ namespace ClientSideChatApp.Core
                                 MessageStatusChanged?.Invoke(seenMsgId, true);
                             }
                             break;
-
                         case MessageId.EDIT_MESSAGE:
                             {
-
                                 ChatMessageResponse response = new ChatMessageResponse(payload);
 
                                 int messageId = response.Messageid;
