@@ -115,27 +115,9 @@ namespace ClientSideChatApp.ViewModels
 
                             IsSent = true,
 
-                            IsSeen = bool.Parse(parts[4])
+                            IsSeen = bool.Parse(parts[4]),
 
-                        });
-                    }
-                    else if (parts.Length == 4) // Fallback for your older group messages
-                    {
-
-                        Messages.Add(new MessageModel
-                        {
-
-                            Sender = parts[0],
-
-                            Timestamp = parts[1],
-
-                            MessageId = int.Parse(parts[2]),
-
-                            Content = parts[3],
-
-                            IsSent = true,
-
-                            IsSeen = false
+                            IsMyMessage = parts[0] == _mainViewModel.MyUsername
 
                         });
                     }
@@ -165,7 +147,9 @@ namespace ClientSideChatApp.ViewModels
 
                         IsSent = true,
 
-                        IsSeen = true
+                        IsSeen = true,
+
+                        IsMyMessage = false
 
                     });
 
@@ -231,7 +215,9 @@ namespace ClientSideChatApp.ViewModels
 
                 IsSent = false,
 
-                IsSeen = false
+                IsSeen = false,
+
+                IsMyMessage = true
 
             });
 

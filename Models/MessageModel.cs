@@ -31,5 +31,7 @@ namespace ClientSideChatApp.Models
 
         public int MessageId { get; set; }
 
+        public bool IsMyMessage { get; set; }
+
     }
 }

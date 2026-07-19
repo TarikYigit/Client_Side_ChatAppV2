@@ -139,7 +139,7 @@ namespace ClientSideChatApp.ViewModels
 
         private void LoadChatHistory()
         {
-            bool fileNeedsSync = false; // Flag to tell us if we found new messages to mark as Read
+            bool fileNeedsSync = false; 
 
             if (System.IO.File.Exists(_currentChatFilePath))
             {
@@ -178,7 +178,9 @@ namespace ClientSideChatApp.ViewModels
 
                             IsSent = true,
 
-                            IsSeen = isSeen
+                            IsSeen = isSeen,
+
+                            IsMyMessage = parts[0] == _mainViewModel.MyUsername
 
                         });
                     }
@@ -213,7 +215,9 @@ namespace ClientSideChatApp.ViewModels
 
                         IsSent = true,
 
-                        IsSeen = true 
+                        IsSeen = true,
+
+                        IsMyMessage = false
 
                     });
 
@@ -289,7 +293,9 @@ namespace ClientSideChatApp.ViewModels
 
                 IsSent = false,
 
-                IsSeen = false
+                IsSeen = false,
+
+                IsMyMessage = true
 
             });
 
