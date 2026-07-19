@@ -5,79 +5,126 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
     </UserControl.Resources>
 
-    <Grid Margin="10">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+    <Grid>
+        <Grid.Background>
+            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                <GradientStop Color="#0f2027" Offset="0.0"/>
+                <GradientStop Color="#203a43" Offset="0.5"/>
+                <GradientStop Color="#2c5364" Offset="1.0"/>
+            </LinearGradientBrush>
+        </Grid.Background>
 
-        <Grid Grid.Row="0" Margin="0,0,0,10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-            <Button Content="Back" Command="{Binding BackCommand}" Padding="10,5"/>
-            <TextBlock Grid.Column="1" Text="{Binding HeaderText}" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" Margin="15,0,0,0"/>
-        </Grid>
+        <Border Background="#1E1E24" CornerRadius="15" Margin="20">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="25" ShadowDepth="8" Opacity="0.4" Color="Black"/>
+            </Border.Effect>
 
-        <ListBox Grid.Row="1" ItemsSource="{Binding Messages}">
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <StackPanel Margin="5">
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
-                            <TextBlock Text="{Binding Sender}" FontWeight="Bold" FontSize="12" Foreground="Gray"/>
-                            <TextBlock Text="{Binding Timestamp}" FontSize="10" Foreground="DarkGray" Margin="10,0,0,0" VerticalAlignment="Bottom"/>
+            <Grid Margin="15">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-                            <!-- State Machine Tick System -->
-                            <TextBlock FontSize="10" Margin="4,0,0,0" VerticalAlignment="Bottom">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Text" Value="✓"/>
-                                        <!-- Default: Just Sent to Server -->
-                                        <Setter Property="Foreground" Value="DarkGray"/>
-                                        <Style.Triggers>
-                                            <!-- Delivered to Vault -->
-                                            <DataTrigger Binding="{Binding IsSent}" Value="True">
-                                                <Setter Property="Text" Value="✓✓"/>
-                                            </DataTrigger>
-                                            <!-- Read by User -->
-                                            <DataTrigger Binding="{Binding IsSeen}" Value="True">
-                                                <Setter Property="Text" Value="✓✓"/>
-                                                <Setter Property="Foreground" Value="#0078D7"/>
-                                                <!-- Blue color -->
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
+                <!-- Header -->
+                <Grid Grid.Row="0" Margin="0,0,0,15">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Button Command="{Binding BackCommand}" Cursor="Hand">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="BtnBorder" Background="#2A2A35" CornerRadius="6" Padding="15,8">
+                                    <TextBlock Text="Back" Foreground="White" FontSize="13" FontWeight="Bold"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="BtnBorder" Property="Background" Value="#3A3A45"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                    <TextBlock Grid.Column="1" Text="{Binding HeaderText}" Foreground="White" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" Margin="15,0,0,0"/>
+                </Grid>
 
-                        </StackPanel>
+                <!-- Chat History -->
+                <ListBox Grid.Row="1" ItemsSource="{Binding Messages}" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Focusable" Value="False"/>
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <ContentPresenter/>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="#2A2A35" CornerRadius="10" Padding="12" Margin="5,5,5,10">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                                        <TextBlock Text="{Binding Sender}" FontWeight="Bold" FontSize="13" Foreground="#A0A0A0"/>
+                                        <TextBlock Text="{Binding Timestamp}" FontSize="11" Foreground="#666666" Margin="10,0,0,0" VerticalAlignment="Center"/>
 
-                        <TextBlock Text="{Binding Content}" FontSize="16" Margin="0,2,0,0"/>
-                    </StackPanel>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
+                                        <TextBlock FontSize="11" Margin="6,0,0,0" VerticalAlignment="Center" FontWeight="Bold">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Text" Value="✓"/>
+                                                    <Setter Property="Foreground" Value="#666666"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsSent}" Value="True">
+                                                            <Setter Property="Text" Value="✓✓"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding IsSeen}" Value="True">
+                                                            <Setter Property="Text" Value="✓✓"/>
+                                                            <Setter Property="Foreground" Value="#3A86FF"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </StackPanel>
+                                    <TextBlock Text="{Binding Content}" FontSize="15" Foreground="White" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
 
-        <TextBlock Grid.Row="2" Text="User is typing..." 
-                   FontStyle="Italic" 
-                   Foreground="Gray" 
-                   Margin="5,2,0,5"
-                   Visibility="{Binding IsTyping, Converter={StaticResource BoolToVis}}" />
+                <TextBlock Grid.Row="2" Text="User is typing..." FontStyle="Italic" Foreground="#888888" Margin="5,5,0,5" Visibility="{Binding IsTyping, Converter={StaticResource BoolToVis}}" />
 
-        <Grid Grid.Row="3" Margin="0,10,0,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="80"/>
-            </Grid.ColumnDefinitions>
-
-            <TextBox Grid.Column="0" Text="{Binding InputText, UpdateSourceTrigger=PropertyChanged}" Padding="8" FontSize="16"/>
-
-            <Button Grid.Column="1" Content="Send" Command="{Binding SendCommand}" Margin="5,0,0,0" 
-                    Background="#0078D7" Foreground="White" BorderThickness="0" FontSize="16"/>
-        </Grid>
-
+                <!-- Input Area -->
+                <Grid Grid.Row="3" Margin="0,10,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="90"/>
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0" Background="#2A2A35" CornerRadius="8" Padding="12,10">
+                        <TextBox Text="{Binding InputText, UpdateSourceTrigger=PropertyChanged}" Foreground="White" Background="Transparent" BorderThickness="0" CaretBrush="White" FontSize="15"/>
+                    </Border>
+                    <Button Grid.Column="1" Command="{Binding SendCommand}" Margin="10,0,0,0" Cursor="Hand">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="BtnBorder" Background="#0078D7" CornerRadius="8">
+                                    <TextBlock Text="Send" Foreground="White" FontSize="15" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="BtnBorder" Property="Background" Value="#005A9E"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </Grid>
+            </Grid>
+        </Border>
     </Grid>
 </UserControl>
