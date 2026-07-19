@@ -6,6 +6,9 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Threading;
+using System.Windows.Input;
+using System;
 
 namespace ClientSideChatApp.ViewModels
 {
@@ -14,6 +17,8 @@ namespace ClientSideChatApp.ViewModels
         private MainViewModel _mainViewModel;
 
         private TcpChatService _chatService;
+
+        private DispatcherTimer _inactivityTimer;
 
         private string _currentChatFilePath;
 
@@ -82,6 +87,16 @@ namespace ClientSideChatApp.ViewModels
             _chatService = chatService;
 
             TargetUser = targetUser;
+
+            _inactivityTimer = new DispatcherTimer();
+
+            _inactivityTimer.Interval = TimeSpan.FromSeconds(30);
+
+            _inactivityTimer.Tick += InactivityTimer_Tick;
+
+            _inactivityTimer.Start();
+
+            InputManager.Current.PreProcessInput += OnGlobalInput;
 
             InitializeChat();
         }
@@ -153,6 +168,25 @@ namespace ClientSideChatApp.ViewModels
                     });
                 }
             };
+        }
+
+        private void OnGlobalInput(object sender, PreProcessInputEventArgs e)
+        {
+            if (e.StagingItem.Input is MouseEventArgs || e.StagingItem.Input is KeyEventArgs)
+            {
+
+                _inactivityTimer.Stop();
+
+                _inactivityTimer.Start();
+
+            }
+        }
+
+        private void InactivityTimer_Tick(object sender, EventArgs e)
+        {
+
+            ExecuteBack(null);
+
         }
 
         private void ExecuteAttachImage(object parameter)
@@ -475,6 +509,10 @@ namespace ClientSideChatApp.ViewModels
 
         private void ExecuteBack(object parameter)
         {
+
+            _inactivityTimer?.Stop();
+
+            InputManager.Current.PreProcessInput -= OnGlobalInput;
 
             _chatService.MessageEdited -= OnMessageEdited;
 

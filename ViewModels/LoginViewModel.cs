@@ -1,5 +1,6 @@
 ﻿using ClientSideChatApp.Core;
 using System.Windows;
+using System.Windows.Input;
 
 namespace ClientSideChatApp.ViewModels
 {
@@ -31,6 +32,15 @@ namespace ClientSideChatApp.ViewModels
             set { _passwordInput = value; OnPropertyChanged(); }
 
         }
+
+        private bool _isPasswordVisible;
+        public bool IsPasswordVisible
+        {
+            get { return _isPasswordVisible; }
+            set { _isPasswordVisible = value; OnPropertyChanged(); }
+        }
+
+        public ICommand TogglePasswordCommand => new RelayCommand(p => IsPasswordVisible = !IsPasswordVisible);
         public RelayCommand LoginCommand { get; set; }
 
         public RelayCommand RegisterCommand { get; set; }

@@ -70,6 +70,8 @@ namespace ClientSideChatApp.Core
         public event Action<List<UserModel>> UserListUpdated;
         public List<UserModel> AllUsers { get; private set; } = new List<UserModel>();
 
+        public event Action ServerDisconnected;
+
         public List<GroupModel> AllGroups { get; private set; } = new List<GroupModel>();
 
         public event Action<byte> LoginSuccessful;
@@ -90,36 +92,67 @@ namespace ClientSideChatApp.Core
         public event Action<int, bool> MessageStatusChanged;
         public Dictionary<byte, ObservableCollection<MessageModel>>  ChatHistories { get; private set; } = new Dictionary<byte, ObservableCollection<MessageModel>>();
 
+        public void ResetState()
+        {
 
+            AllUsers.Clear();
+
+            AllGroups.Clear();
+
+            ChatHistories.Clear();
+
+        }
 
         private void SendPacket(byte messageId, byte[] payload)
         {
-
-            int payloadLength = payload?.Length ?? 0;
-
-            using (MemoryStream ms = new MemoryStream())
-
-            using (BinaryWriter writer = new BinaryWriter(ms))
+            try
             {
-
-                writer.Write(messageId);
-
-                writer.Write(payloadLength); 
-
-                if (payloadLength > 0)
+                if (_client == null || !_client.Connected)
                 {
 
-                    writer.Write(payload);
+                    System.Windows.MessageBox.Show("You have lost connection to the server. Please wait for it to come back online.", "Disconnected");
+                    Application.Current.Dispatcher.Invoke(() => {
+
+                        ResetState();
+
+                        ServerDisconnected?.Invoke();
+
+                    });
+                    return;
 
                 }
 
-                byte[] finalPacket = ms.ToArray();
+                int payloadLength = payload?.Length ?? 0;
 
-                NetworkStream stream = _client.GetStream();
+                using (MemoryStream ms = new MemoryStream())
 
-                stream.Write(finalPacket, 0, finalPacket.Length);
+                using (BinaryWriter writer = new BinaryWriter(ms))
+                {
 
-                stream.Flush();
+                    writer.Write(messageId);
+
+                    writer.Write(payloadLength);
+
+                    if (payloadLength > 0)
+                    {
+
+                        writer.Write(payload);
+
+                    }
+
+                    byte[] finalPacket = ms.ToArray();
+
+                    NetworkStream stream = _client.GetStream();
+
+                    stream.Write(finalPacket, 0, finalPacket.Length);
+
+                    stream.Flush();
+                }
+            }
+            catch (Exception)
+            {
+
+                System.Windows.MessageBox.Show("The server unexpectedly went offline. Your message was not sent.", "Server Crashed");
 
             }
         }
@@ -128,38 +161,89 @@ namespace ClientSideChatApp.Core
 
         public void ConnectAndRegister(string username, string password)
         {
+            try
+            {
 
-            _myUsername = username;
+                _myUsername = username;
 
-            _myPassword = password;
+                _myPassword = password;
 
-            _client = new TcpClient("127.0.0.1", 5000);
+                if (_client != null)
+                {
 
-            UserRegisterRequest request = new UserRegisterRequest(username, password);
+                    _client.Close();
 
-            SendPacket(request.GetId(), request.ToBytes());
+                }
 
-            Task.Run(() => ListenForPackets());
+                _client = new TcpClient();
 
+                IAsyncResult result = _client.BeginConnect("127.0.0.1", 5000, null, null);
+
+                bool success = result.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(3));
+
+                if (!success)
+                {
+
+                    throw new Exception("Connection timed out.");
+
+                }
+                _client.EndConnect(result);
+
+                UserRegisterRequest request = new UserRegisterRequest(username, password);
+
+                SendPacket(request.GetId(), request.ToBytes());
+
+                Task.Run(() => ListenForPackets());
+            }
+            catch (Exception ex)
+            {
+
+                System.Windows.MessageBox.Show($"The Server is currently offline. Please wait a moment and try again.\n\nDetail: {ex.Message}", "Connection Failed");
+
+            }
         }
-
-
 
         public void ConnectAndLogin(string username, string password)
         {
+            try
+            {
 
-            _myUsername = username;
+                _myUsername = username;
 
-            _myPassword = password;
+                _myPassword = password;
 
-            _client = new TcpClient("127.0.0.1", 5000);
+                if (_client != null)
+                {
 
-            UserLoginRequest request = new UserLoginRequest(username, password);
+                    _client.Close();
+                }
 
-            SendPacket(request.GetId(), request.ToBytes());
+                _client = new TcpClient();
 
-            Task.Run(() => ListenForPackets());
+                IAsyncResult result = _client.BeginConnect("127.0.0.1", 5000, null, null);
 
+                bool success = result.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(3));
+
+                if (!success)
+                {
+
+                    throw new Exception("Connection timed out.");
+
+                }
+                _client.EndConnect(result);
+
+                UserLoginRequest request = new UserLoginRequest(username, password);
+
+                SendPacket(request.GetId(), request.ToBytes());
+
+                Task.Run(() => ListenForPackets());
+            }
+            catch (Exception ex)
+            {
+
+                System.Windows.MessageBox.Show($"The Server is currently offline. Please wait a moment and try again.\n\nDetail: {ex.Message}", "Connection Failed");
+
+            }
         }
 
 
@@ -206,23 +290,34 @@ namespace ClientSideChatApp.Core
 
         private void ListenForPackets()
         {
-            NetworkStream stream = _client.GetStream();
+            TcpClient currentClient = _client;
+
+            if (currentClient == null) return;
+
+            NetworkStream stream = currentClient.GetStream();
+
             BinaryReader networkReader = new BinaryReader(stream, Encoding.UTF8, true);
 
             try
             {
-                while (_client.Connected)
+                while (true)
                 {
+
                     byte packetType;
+
                     int payloadLength;
 
                     try
                     {
+
                         packetType = networkReader.ReadByte();
+
                         payloadLength = networkReader.ReadInt32();
+
                     }
-                    catch (EndOfStreamException)
+                    catch (Exception)
                     {
+
                         break;
                     }
 
@@ -238,6 +333,7 @@ namespace ClientSideChatApp.Core
                         if (bytesRead == 0) throw new EndOfStreamException("Disconnected while reading payload.");
 
                         totalBytesRead += bytesRead;
+
                     }
 
                     try
@@ -251,30 +347,30 @@ namespace ClientSideChatApp.Core
 
                                     bool flowControl = false;
 
-                                    Application.Current.Dispatcher.Invoke(() => 
-                                        {
+                                    Application.Current.Dispatcher.Invoke(() =>
+                                    {
 
-                                            flowControl = SetupUser(stream, response);
+                                        flowControl = SetupUser(stream, response);
 
-                                        }
+                                    }
                                     );
-
                                     if (!flowControl) return;
                                 }
                                 break;
 
                             case MessageId.REQUEST_USER_LIST:
                                 {
+
                                     UserListResponse response = new UserListResponse(payload);
 
-                                    Application.Current.Dispatcher.Invoke(() => 
-                                        {
+                                    Application.Current.Dispatcher.Invoke(() =>
+                                    {
 
-                                            AllUsers = response.Users;
+                                        AllUsers = response.Users;
 
-                                            UserListUpdated?.Invoke(AllUsers);
+                                        UserListUpdated?.Invoke(AllUsers);
 
-                                        }
+                                    }
                                     );
                                 }
                                 break;
@@ -292,10 +388,12 @@ namespace ClientSideChatApp.Core
 
                                     string timeString = response.TimeStamp.ToLocalTime().ToString("yyyy:MM:dd:HH:mm:ss");
 
-                                    Application.Current.Dispatcher.Invoke(() => 
-                                        {
-                                            MessageReceived?.Invoke(senderId, messageId, message, timeString);
-                                        }
+                                    Application.Current.Dispatcher.Invoke(() =>
+                                    {
+
+                                        MessageReceived?.Invoke(senderId, messageId, message, timeString);
+
+                                    }
                                     );
                                 }
                                 break;
@@ -308,15 +406,19 @@ namespace ClientSideChatApp.Core
                                     bool flowControl = false;
 
                                     Application.Current.Dispatcher.Invoke(() => {
+
                                         flowControl = ReSetupUser(stream, response);
+
                                     });
 
                                     if (!flowControl) return;
+
                                 }
                                 break;
 
                             case MessageId.GROUP_CHAT_MESSAGE:
                                 {
+
                                     GroupChatMessageResponse response = new GroupChatMessageResponse(payload);
 
                                     byte senderId = response.SenderId;
@@ -336,12 +438,14 @@ namespace ClientSideChatApp.Core
                                         string senderName = sender != null ? sender.Username : $"User_{senderId}";
 
                                         GroupMessageReceived?.Invoke(groupId, senderId, messageId, senderName, message, timeString);
+
                                     });
                                 }
                                 break;
 
                             case MessageId.REQUEST_GROUP_LIST:
                                 {
+
                                     GroupListResponse response = new GroupListResponse(payload);
 
                                     Application.Current.Dispatcher.Invoke(() => {
@@ -349,13 +453,16 @@ namespace ClientSideChatApp.Core
                                         AllGroups = response.Groups;
 
                                         GroupListUpdated?.Invoke(response.Groups);
+
                                     });
                                 }
                                 break;
 
                             case MessageId.TYPING_STATUS:
                                 {
+
                                     byte typerId = payload[0];
+
                                     Application.Current.Dispatcher.Invoke(() => {
 
                                         UserIsTypingReceived?.Invoke(typerId);
@@ -366,7 +473,9 @@ namespace ClientSideChatApp.Core
 
                             case MessageId.MESSAGE_SENT:
                                 {
+
                                     int deliveredMsgId = BitConverter.ToInt32(payload, 0);
+
                                     Application.Current.Dispatcher.Invoke(() => {
 
                                         MessageStatusChanged?.Invoke(deliveredMsgId, false);
@@ -377,15 +486,20 @@ namespace ClientSideChatApp.Core
 
                             case MessageId.MESSAGE_SEEN:
                                 {
+
                                     int seenMsgId = BitConverter.ToInt32(payload, 0);
+
                                     Application.Current.Dispatcher.Invoke(() => {
+
                                         MessageStatusChanged?.Invoke(seenMsgId, true);
+
                                     });
                                 }
                                 break;
 
                             case MessageId.EDIT_MESSAGE:
                                 {
+
                                     ChatMessageResponse response = new ChatMessageResponse(payload);
 
                                     int messageId = response.Messageid;
@@ -395,13 +509,16 @@ namespace ClientSideChatApp.Core
                                     string newContent = EncryptionManager.DecryptMessage(response.Message);
 
                                     Application.Current.Dispatcher.Invoke(() => {
+
                                         MessageEdited?.Invoke(senderId, messageId, newContent);
+
                                     });
                                 }
                                 break;
 
                             case MessageId.EDIT_GROUP_MESSAGE:
                                 {
+
                                     GroupChatMessageResponse response = new GroupChatMessageResponse(payload);
 
                                     int messageId = response.messageId;
@@ -436,6 +553,7 @@ namespace ClientSideChatApp.Core
                                     File.WriteAllBytes(savePath, response.ImageBytes);
 
                                     string formattedMessage = $"[IMG:{savePath}]";
+
                                     string timeString = DateTime.Now.ToString("yyyy:MM:dd:HH:mm:ss");
 
                                     Application.Current.Dispatcher.Invoke(() => {
@@ -448,7 +566,6 @@ namespace ClientSideChatApp.Core
 
                             case MessageId.GROUP_IMAGE:
                                 {
-
                                     GroupImageMessageResponse response = new GroupImageMessageResponse(payload);
 
                                     string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
@@ -470,6 +587,7 @@ namespace ClientSideChatApp.Core
                                         string timeString = DateTime.Now.ToString("yyyy:MM:dd:HH:mm:ss");
 
                                         GroupMessageReceived?.Invoke(response.GroupId, response.SenderId, response.Messageid, senderName, $"[IMG:{savePath}]", timeString);
+
                                     });
                                 }
                                 break;
@@ -488,6 +606,22 @@ namespace ClientSideChatApp.Core
 
                 System.Diagnostics.Debug.WriteLine($"[Network Disconnected]: {ex.Message}");
 
+            }
+            finally
+            {
+
+                currentClient?.Close();
+
+                if (_client == currentClient)
+                {
+
+                    Application.Current.Dispatcher.Invoke(() => {
+
+                        ResetState();
+
+                        ServerDisconnected?.Invoke();
+                    });
+                }
             }
         }
 

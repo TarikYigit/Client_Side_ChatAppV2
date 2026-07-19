@@ -31,6 +31,15 @@ namespace ClientSideChatApp.ViewModels
 
             CurrentView = new LoginViewModel(this, _masterChatService);
 
+            _masterChatService.ServerDisconnected += OnServerDisconnected;
+
+        }
+
+        private void OnServerDisconnected()
+        {
+
+            CurrentView = new LoginViewModel(this, _masterChatService);
+
         }
 
         private void BackgroundGroupMessageSaver(byte groupId, byte senderId, int messageId, string senderName, string messageContent, string timeString)

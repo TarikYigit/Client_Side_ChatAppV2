@@ -1,9 +1,10 @@
-﻿using System;
-using System.Collections.ObjectModel;
-using System.Linq; // Added for Select()
+﻿using System.Collections.ObjectModel;
 using System.Windows;
 using ClientSideChatApp.Core;
 using ClientSideChatApp.Models;
+using System.Windows.Threading;
+using System.Windows.Input;
+using System;
 
 namespace ClientSideChatApp.ViewModels
 {
@@ -14,6 +15,8 @@ namespace ClientSideChatApp.ViewModels
         private TcpChatService _chatService;
 
         private string _currentChatFilePath;
+
+        private DispatcherTimer _inactivityTimer;
 
         public RelayCommand AttachImageCommand { get; set; }
 
@@ -52,7 +55,34 @@ namespace ClientSideChatApp.ViewModels
 
             TargetGroup = targetGroup;
 
+            _inactivityTimer = new DispatcherTimer();
+
+            _inactivityTimer.Interval = TimeSpan.FromSeconds(30);
+
+            _inactivityTimer.Tick += InactivityTimer_Tick;
+
+            _inactivityTimer.Start();
+
+            InputManager.Current.PreProcessInput += OnGlobalInput;
+
             InitializeChat();
+
+        }
+        private void OnGlobalInput(object sender, PreProcessInputEventArgs e)
+        {
+            if (e.StagingItem.Input is MouseEventArgs || e.StagingItem.Input is KeyEventArgs)
+            {
+
+                _inactivityTimer.Stop();
+
+                _inactivityTimer.Start();
+            }
+        }
+
+        private void InactivityTimer_Tick(object sender, EventArgs e)
+        {
+
+            ExecuteBack(null);
 
         }
 
@@ -402,6 +432,11 @@ namespace ClientSideChatApp.ViewModels
 
         private void ExecuteBack(object parameter)
         {
+
+            _inactivityTimer?.Stop();
+
+            InputManager.Current.PreProcessInput -= OnGlobalInput;
+
 
             _chatService.GroupMessageReceived -= OnGroupMessageReceived;
 
