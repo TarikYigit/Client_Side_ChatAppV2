@@ -55,6 +55,10 @@ namespace ClientSideChatApp.ViewModels
 
             System.IO.File.AppendAllText(chatFilePath, fileLine);
 
+            ClientSideChatApp.Helpers.WindowFlashHelper.FlashTaskbar();
+
+            System.Media.SystemSounds.Asterisk.Play();
+
         }
 
         private void BackgroundMessageSaver(byte senderId, int messageId, string messageContent, string timeString)
@@ -81,6 +85,10 @@ namespace ClientSideChatApp.ViewModels
             string fileLine = $"{senderName}|{timeString}|{messageId}|{messageContent}|False\n";
 
             System.IO.File.AppendAllText(chatFilePath, fileLine);
+
+            ClientSideChatApp.Helpers.WindowFlashHelper.FlashTaskbar();
+
+            System.Media.SystemSounds.Asterisk.Play();
 
         }
     }
