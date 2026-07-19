@@ -9,6 +9,7 @@ namespace ClientSideChatApp.Helpers
         public static readonly DependencyProperty AutoScrollProperty = DependencyProperty.RegisterAttached("AutoScroll", typeof(bool), typeof(AutoScrollHelper), new PropertyMetadata(false, AutoScrollPropertyChanged));
 
         public static void SetAutoScroll(DependencyObject obj, bool value) => obj.SetValue(AutoScrollProperty, value);
+
         public static bool GetAutoScroll(DependencyObject obj) => (bool)obj.GetValue(AutoScrollProperty);
 
         private static void AutoScrollPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)

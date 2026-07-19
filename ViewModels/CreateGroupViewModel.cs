@@ -6,14 +6,19 @@ namespace ClientSideChatApp.ViewModels
 {
     public class CreateGroupViewModel : ObservableObject
     {
+
         private MainViewModel _mainViewModel;
+
         private TcpChatService _chatService;
 
         private string _groupName;
         public string GroupName
         {
+
             get { return _groupName; }
+
             set { _groupName = value; OnPropertyChanged(); }
+
         }
 
         public ObservableCollection<UserModel> AvailableUsers { get; set; }
@@ -37,16 +42,20 @@ namespace ClientSideChatApp.ViewModels
 
         private bool CanExecuteCreate(object parameter)
         {
+
             return !string.IsNullOrWhiteSpace(GroupName) && AvailableUsers.Any(u => u.IsSelected);
+
         }
 
         private void ExecuteCreate(object parameter)
         {
+
             var selectedUserIds = AvailableUsers.Where(u => u.IsSelected).Select(u => u.UserId).ToList();
 
             _chatService.CreateGroup(GroupName, selectedUserIds);
 
             ExecuteBack(null);
+
         }
 
         private void ExecuteBack(object parameter)

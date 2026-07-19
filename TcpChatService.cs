@@ -46,6 +46,10 @@ namespace ClientSideChatApp.Core
 
         EDIT_GROUP_MESSAGE = 17,
 
+        SEND_IMAGE = 18,    
+
+        GROUP_IMAGE = 19
+
     }
 
     public class TcpChatService
@@ -389,6 +393,43 @@ namespace ClientSideChatApp.Core
                             }
                             break;
 
+                        case MessageId.SEND_IMAGE:
+                            {
+                                ImageMessageResponse response = new ImageMessageResponse(payload);
+
+                                string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                                string imageFolder = Path.Combine(appData, "ClientSideChatApp", "Images");
+                                Directory.CreateDirectory(imageFolder);
+
+                                string savePath = Path.Combine(imageFolder, Guid.NewGuid().ToString() + ".png");
+                                File.WriteAllBytes(savePath, response.ImageBytes);
+
+                                // Uses the magic [IMG:] tag so the UI knows it's a picture
+                                string formattedMessage = $"[IMG:{savePath}]";
+                                string timeString = DateTime.Now.ToString("yyyy:MM:dd:HH:mm:ss");
+
+                                MessageReceived?.Invoke(response.SenderId, response.Messageid, formattedMessage, timeString);
+                            }
+                            break;
+
+                        case MessageId.GROUP_IMAGE:
+                            {
+                                GroupImageMessageResponse response = new GroupImageMessageResponse(payload);
+
+                                string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                                string imageFolder = Path.Combine(appData, "ClientSideChatApp", "Images");
+                                Directory.CreateDirectory(imageFolder);
+
+                                string savePath = Path.Combine(imageFolder, Guid.NewGuid().ToString() + ".png");
+                                File.WriteAllBytes(savePath, response.ImageBytes);
+
+                                UserModel sender = AllUsers.Find(u => u.UserId == response.SenderId);
+                                string senderName = sender != null ? sender.Username : $"User_{response.SenderId}";
+                                string timeString = DateTime.Now.ToString("yyyy:MM:dd:HH:mm:ss");
+
+                                GroupMessageReceived?.Invoke(response.GroupId, response.SenderId, response.Messageid, senderName, $"[IMG:{savePath}]", timeString);
+                            }
+                            break;
                     }
                 }
             }
@@ -555,6 +596,32 @@ namespace ClientSideChatApp.Core
 
             SendPacket((byte)MessageId.EDIT_GROUP_MESSAGE, request.ToBytes());
 
+        }
+
+        public void SendImageMessage(byte senderId, byte receiverId, int messageId, byte[] imageBytes)
+        {
+            try
+            {
+                SendImageRequest request = new SendImageRequest(senderId, receiverId, messageId, imageBytes);
+                SendPacket(request.GetId(), request.ToBytes());
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Network Packet Crash: {ex.Message}", "TCP Error");
+            }
+        }
+
+        public void SendGroupImageMessage(byte senderId, byte groupId, int messageId, byte[] imageBytes)
+        {
+            try
+            {
+                GroupImageRequest request = new GroupImageRequest(senderId, groupId, messageId, imageBytes);
+                SendPacket(request.GetId(), request.ToBytes());
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Network Group Packet Crash: {ex.Message}", "TCP Error");
+            }
         }
     }
 }

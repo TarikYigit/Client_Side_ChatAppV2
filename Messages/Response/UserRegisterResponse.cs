@@ -4,8 +4,11 @@ namespace Client_Side_ChatApp.Messages
 {   
     enum PasswordStrengthOrUsername
     {
+
         PASSWORD = 0x01,
+
         USERNAME = 0x02
+
     }
     public class UserRegisterResponse
     {

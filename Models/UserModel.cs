@@ -17,9 +17,13 @@ namespace ClientSideChatApp.Models
             get { return _unreadCount; }
             set
             {
+
                 _unreadCount = value;
+
                 OnPropertyChanged();
+
                 OnPropertyChanged(nameof(HasUnreadMessages));
+
             }
         }
 
