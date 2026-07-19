@@ -206,238 +206,228 @@ namespace ClientSideChatApp.Core
 
         private void ListenForPackets()
         {
-
             NetworkStream stream = _client.GetStream();
-
             BinaryReader networkReader = new BinaryReader(stream, Encoding.UTF8, true);
 
             try
             {
-
                 while (_client.Connected)
                 {
-
                     byte packetType;
-
                     int payloadLength;
 
                     try
                     {
-
                         packetType = networkReader.ReadByte();
-
                         payloadLength = networkReader.ReadInt32();
-
                     }
                     catch (EndOfStreamException)
                     {
-
                         break;
-
                     }
 
-                    byte[] payload = networkReader.ReadBytes(payloadLength);
-
-
-                    switch ((MessageId)packetType)
+                    // THE FIX 1: Guaranteed chunk reader. This forces TCP to wait for the entire image to download!
+                    byte[] payload = new byte[payloadLength];
+                    int totalBytesRead = 0;
+                    while (totalBytesRead < payloadLength)
                     {
+                        int bytesRead = stream.Read(payload, totalBytesRead, payloadLength - totalBytesRead);
+                        if (bytesRead == 0) throw new EndOfStreamException("Disconnected while reading payload.");
+                        totalBytesRead += bytesRead;
+                    }
 
-                        case MessageId.LOG_IN:
-                            {
-
-                                LoginResponse response = new LoginResponse(payload);
-
-                                bool flowControl = SetupUser(stream, response);
-
-                                if (!flowControl)
+                    // THE FIX 2: Inner try-catch. If one bad packet arrives, it won't crash the entire background listener.
+                    try
+                    {
+                        switch ((MessageId)packetType)
+                        {
+                            case MessageId.LOG_IN:
                                 {
+                                    LoginResponse response = new LoginResponse(payload);
+                                    bool flowControl = false;
 
-                                    return;
+                                    // THE FIX 3: Push all UI event invocations to the Main Window thread!
+                                    Application.Current.Dispatcher.Invoke(() => {
+                                        flowControl = SetupUser(stream, response);
+                                    });
 
+                                    if (!flowControl) return;
                                 }
-                            }
-                            break;
+                                break;
 
-                        case MessageId.REQUEST_USER_LIST:
-                            {
-
-                                UserListResponse response = new UserListResponse(payload);
-
-                                AllUsers = response.Users;
-
-                                UserListUpdated?.Invoke(AllUsers); 
-
-                            }
-                            break;
-
-                        case MessageId.CHAT_MESSAGE:
-                            {
-
-                                ChatMessageResponse response = new ChatMessageResponse(payload);
-
-                                byte senderId = response.SenderId;
-
-                                int messageId = response.Messageid; 
-
-                                string message = EncryptionManager.DecryptMessage(response.Message);
-
-                                string timeString = response.TimeStamp.ToLocalTime().ToString("yyyy:MM:dd:HH:mm:ss");
-
-                                MessageReceived?.Invoke(senderId, messageId, message, timeString);
-                            }
-                            break;
-
-                        case MessageId.REGISTER:
-                            {   
-                                UserRegisterResponse response = new UserRegisterResponse(payload);
-
-                                bool flowControl = ReSetupUser(stream, response);
-
-                                if (!flowControl)
+                            case MessageId.REQUEST_USER_LIST:
                                 {
+                                    UserListResponse response = new UserListResponse(payload);
 
-                                    return;
-
+                                    Application.Current.Dispatcher.Invoke(() => {
+                                        AllUsers = response.Users;
+                                        UserListUpdated?.Invoke(AllUsers);
+                                    });
                                 }
-                            }
-                            break;
+                                break;
 
-                        case MessageId.GROUP_CHAT_MESSAGE:
-                            {
-                                GroupChatMessageResponse response = new GroupChatMessageResponse(payload);
+                            case MessageId.CHAT_MESSAGE:
+                                {
+                                    ChatMessageResponse response = new ChatMessageResponse(payload);
+                                    byte senderId = response.SenderId;
+                                    int messageId = response.Messageid;
+                                    string message = EncryptionManager.DecryptMessage(response.Message);
+                                    string timeString = response.TimeStamp.ToLocalTime().ToString("yyyy:MM:dd:HH:mm:ss");
 
-                                byte senderId = response.SenderId;
+                                    Application.Current.Dispatcher.Invoke(() => {
+                                        MessageReceived?.Invoke(senderId, messageId, message, timeString);
+                                    });
+                                }
+                                break;
 
-                                byte groupId = response.GroupId;
+                            case MessageId.REGISTER:
+                                {
+                                    UserRegisterResponse response = new UserRegisterResponse(payload);
+                                    bool flowControl = false;
 
-                                int messageId = response.messageId; 
+                                    Application.Current.Dispatcher.Invoke(() => {
+                                        flowControl = ReSetupUser(stream, response);
+                                    });
 
-                                string message = EncryptionManager.DecryptMessage(response.Message);
+                                    if (!flowControl) return;
+                                }
+                                break;
 
-                                string timeString = response.TimeStamp.ToLocalTime().ToString("yyyy:MM:dd:HH:mm:ss");
+                            case MessageId.GROUP_CHAT_MESSAGE:
+                                {
+                                    GroupChatMessageResponse response = new GroupChatMessageResponse(payload);
+                                    byte senderId = response.SenderId;
+                                    byte groupId = response.GroupId;
+                                    int messageId = response.messageId;
+                                    string message = EncryptionManager.DecryptMessage(response.Message);
+                                    string timeString = response.TimeStamp.ToLocalTime().ToString("yyyy:MM:dd:HH:mm:ss");
 
-                                UserModel sender = AllUsers.Find(u => u.UserId == senderId);
+                                    Application.Current.Dispatcher.Invoke(() => {
+                                        UserModel sender = AllUsers.Find(u => u.UserId == senderId);
+                                        string senderName = sender != null ? sender.Username : $"User_{senderId}";
+                                        GroupMessageReceived?.Invoke(groupId, senderId, messageId, senderName, message, timeString);
+                                    });
+                                }
+                                break;
 
-                                string senderName = sender != null ? sender.Username : $"User_{senderId}";
+                            case MessageId.REQUEST_GROUP_LIST:
+                                {
+                                    GroupListResponse response = new GroupListResponse(payload);
 
-                                GroupMessageReceived?.Invoke(groupId, senderId, messageId, senderName, message, timeString);
-                            }
-                            break;
+                                    Application.Current.Dispatcher.Invoke(() => {
+                                        AllGroups = response.Groups;
+                                        GroupListUpdated?.Invoke(response.Groups);
+                                    });
+                                }
+                                break;
 
-                        case MessageId.REQUEST_GROUP_LIST:
-                            {
+                            case MessageId.TYPING_STATUS:
+                                {
+                                    byte typerId = payload[0];
+                                    Application.Current.Dispatcher.Invoke(() => {
+                                        UserIsTypingReceived?.Invoke(typerId);
+                                    });
+                                }
+                                break;
 
-                                GroupListResponse response = new GroupListResponse(payload);
+                            case MessageId.MESSAGE_SENT:
+                                {
+                                    int deliveredMsgId = BitConverter.ToInt32(payload, 0);
+                                    Application.Current.Dispatcher.Invoke(() => {
+                                        MessageStatusChanged?.Invoke(deliveredMsgId, false);
+                                    });
+                                }
+                                break;
 
-                                AllGroups = response.Groups;
+                            case MessageId.MESSAGE_SEEN:
+                                {
+                                    int seenMsgId = BitConverter.ToInt32(payload, 0);
+                                    Application.Current.Dispatcher.Invoke(() => {
+                                        MessageStatusChanged?.Invoke(seenMsgId, true);
+                                    });
+                                }
+                                break;
 
-                                GroupListUpdated?.Invoke(response.Groups);
+                            case MessageId.EDIT_MESSAGE:
+                                {
+                                    ChatMessageResponse response = new ChatMessageResponse(payload);
+                                    int messageId = response.Messageid;
+                                    byte senderId = response.SenderId;
+                                    string newContent = EncryptionManager.DecryptMessage(response.Message);
 
-                            }
-                            break;
+                                    Application.Current.Dispatcher.Invoke(() => {
+                                        MessageEdited?.Invoke(senderId, messageId, newContent);
+                                    });
+                                }
+                                break;
 
-                        case MessageId.TYPING_STATUS:
-                            {
+                            case MessageId.EDIT_GROUP_MESSAGE:
+                                {
+                                    GroupChatMessageResponse response = new GroupChatMessageResponse(payload);
+                                    int messageId = response.messageId;
+                                    byte senderId = response.SenderId;
+                                    byte groupId = response.GroupId;
+                                    string newContent = EncryptionManager.DecryptMessage(response.Message);
 
-                                byte typerId = payload[0];
+                                    Application.Current.Dispatcher.Invoke(() => {
+                                        GroupMessageEdited?.Invoke(groupId, senderId, messageId, newContent);
+                                    });
+                                }
+                                break;
 
-                                UserIsTypingReceived?.Invoke(typerId);
+                            case MessageId.SEND_IMAGE:
+                                {
+                                    ImageMessageResponse response = new ImageMessageResponse(payload);
+                                    string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                                    string imageFolder = Path.Combine(appData, "ClientSideChatApp", "Images");
+                                    Directory.CreateDirectory(imageFolder);
 
-                            }
-                            break;
+                                    string savePath = Path.Combine(imageFolder, Guid.NewGuid().ToString() + ".png");
 
-                        case MessageId.MESSAGE_SENT: 
-                            {
+                                    // We do the heavy file saving in the background thread...
+                                    File.WriteAllBytes(savePath, response.ImageBytes);
 
-                                int deliveredMsgId = BitConverter.ToInt32(payload, 0);
+                                    string formattedMessage = $"[IMG:{savePath}]";
+                                    string timeString = DateTime.Now.ToString("yyyy:MM:dd:HH:mm:ss");
 
-                                MessageStatusChanged?.Invoke(deliveredMsgId, false);
-                            }
-                            break;
+                                    // ...and only push the UI update to the Main Thread!
+                                    Application.Current.Dispatcher.Invoke(() => {
+                                        MessageReceived?.Invoke(response.SenderId, response.Messageid, formattedMessage, timeString);
+                                    });
+                                }
+                                break;
 
-                        case MessageId.MESSAGE_SEEN: 
-                            {
+                            case MessageId.GROUP_IMAGE:
+                                {
+                                    GroupImageMessageResponse response = new GroupImageMessageResponse(payload);
+                                    string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                                    string imageFolder = Path.Combine(appData, "ClientSideChatApp", "Images");
+                                    Directory.CreateDirectory(imageFolder);
 
-                                int seenMsgId = BitConverter.ToInt32(payload, 0);
+                                    string savePath = Path.Combine(imageFolder, Guid.NewGuid().ToString() + ".png");
 
-                                MessageStatusChanged?.Invoke(seenMsgId, true);
-                            }
-                            break;
-                        case MessageId.EDIT_MESSAGE:
-                            {
-                                ChatMessageResponse response = new ChatMessageResponse(payload);
+                                    File.WriteAllBytes(savePath, response.ImageBytes);
 
-                                int messageId = response.Messageid;
+                                    Application.Current.Dispatcher.Invoke(() => {
+                                        UserModel sender = AllUsers.Find(u => u.UserId == response.SenderId);
+                                        string senderName = sender != null ? sender.Username : $"User_{response.SenderId}";
+                                        string timeString = DateTime.Now.ToString("yyyy:MM:dd:HH:mm:ss");
 
-                                byte senderId = response.SenderId;
-
-                                string newContent = EncryptionManager.DecryptMessage(response.Message);
-
-                                MessageEdited?.Invoke(senderId, messageId, newContent);
-                            }
-                            break;
-
-                        case MessageId.EDIT_GROUP_MESSAGE:
-                            {
-                                GroupChatMessageResponse response = new GroupChatMessageResponse(payload);
-
-                                int messageId = response.messageId;
-
-                                byte senderId = response.SenderId;
-
-                                byte groupId = response.GroupId;
-
-                                string newContent = EncryptionManager.DecryptMessage(response.Message);
-
-                                GroupMessageEdited?.Invoke(groupId, senderId, messageId, newContent);
-                            }
-                            break;
-
-                        case MessageId.SEND_IMAGE:
-                            {
-                                ImageMessageResponse response = new ImageMessageResponse(payload);
-
-                                string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-                                string imageFolder = Path.Combine(appData, "ClientSideChatApp", "Images");
-                                Directory.CreateDirectory(imageFolder);
-
-                                string savePath = Path.Combine(imageFolder, Guid.NewGuid().ToString() + ".png");
-                                File.WriteAllBytes(savePath, response.ImageBytes);
-
-                                // Uses the magic [IMG:] tag so the UI knows it's a picture
-                                string formattedMessage = $"[IMG:{savePath}]";
-                                string timeString = DateTime.Now.ToString("yyyy:MM:dd:HH:mm:ss");
-
-                                MessageReceived?.Invoke(response.SenderId, response.Messageid, formattedMessage, timeString);
-                            }
-                            break;
-
-                        case MessageId.GROUP_IMAGE:
-                            {
-                                GroupImageMessageResponse response = new GroupImageMessageResponse(payload);
-
-                                string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-                                string imageFolder = Path.Combine(appData, "ClientSideChatApp", "Images");
-                                Directory.CreateDirectory(imageFolder);
-
-                                string savePath = Path.Combine(imageFolder, Guid.NewGuid().ToString() + ".png");
-                                File.WriteAllBytes(savePath, response.ImageBytes);
-
-                                UserModel sender = AllUsers.Find(u => u.UserId == response.SenderId);
-                                string senderName = sender != null ? sender.Username : $"User_{response.SenderId}";
-                                string timeString = DateTime.Now.ToString("yyyy:MM:dd:HH:mm:ss");
-
-                                GroupMessageReceived?.Invoke(response.GroupId, response.SenderId, response.Messageid, senderName, $"[IMG:{savePath}]", timeString);
-                            }
-                            break;
+                                        GroupMessageReceived?.Invoke(response.GroupId, response.SenderId, response.Messageid, senderName, $"[IMG:{savePath}]", timeString);
+                                    });
+                                }
+                                break;
+                        }
+                    }
+                    catch (Exception innerEx)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[Inner Parsing Crash] ID: {packetType}, Error: {innerEx.Message}");
                     }
                 }
             }
             catch (Exception ex)
             {
-
                 System.Diagnostics.Debug.WriteLine($"[Network Disconnected]: {ex.Message}");
-
             }
         }
 
