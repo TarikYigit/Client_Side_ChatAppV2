@@ -10,6 +10,24 @@
                 <GradientStop Color="#2c5364" Offset="1.0"/>
             </LinearGradientBrush>
         </Grid.Background>
+        <Rectangle IsHitTestVisible="False" Opacity="0.07">
+            <Rectangle.Fill>
+                <!-- TileMode="Tile" mathematically repeats this spatial shape infinitely -->
+                <DrawingBrush Viewport="0,0,30,30" ViewportUnits="Absolute" TileMode="Tile">
+                    <DrawingBrush.Drawing>
+                        <GeometryDrawing>
+                            <GeometryDrawing.Pen>
+                                <Pen Brush="#FFFFFF" Thickness="1.5"/>
+                            </GeometryDrawing.Pen>
+                            <GeometryDrawing.Geometry>
+                                <!-- Defines a single square of the mesh -->
+                                <RectangleGeometry Rect="0,0,30,30"/>
+                            </GeometryDrawing.Geometry>
+                        </GeometryDrawing>
+                    </DrawingBrush.Drawing>
+                </DrawingBrush>
+            </Rectangle.Fill>
+        </Rectangle>
 
         <Border Background="#1E1E24" CornerRadius="15" Margin="20">
             <Border.Effect>

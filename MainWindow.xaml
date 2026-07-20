@@ -3,8 +3,12 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:ClientSideChatApp.ViewModels"
         xmlns:views="clr-namespace:ClientSideChatApp.Views"
-        Title="Client Side Chat App" Height="450" Width="400">
-        
+        Title="Client Side Chat App" Height="650" Width="1000"
+        WindowStyle="None" 
+        AllowsTransparency="True" 
+        Background="Transparent" 
+        WindowStartupLocation="CenterScreen">
+
     <Window.DataContext>
         <vm:MainViewModel/>
     </Window.DataContext>
@@ -25,13 +29,47 @@
         <DataTemplate DataType="{x:Type vm:CreateGroupViewModel}">
             <views:CreateGroupView />
         </DataTemplate>
-        
         <DataTemplate DataType="{x:Type vm:AddUserToGroupViewModel}">
             <views:AddUserToGroupView />
         </DataTemplate>
     </Window.Resources>
 
-    <Grid Background="#F5F5F5">
-        <ContentControl Content="{Binding CurrentView}"/>
-    </Grid>
+    <!-- The Main App Container -->
+    <Border Background="#0f2027" CornerRadius="12" BorderBrush="#3A3A45" BorderThickness="1" ClipToBounds="True">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="35"/>
+                <!-- Title Bar Row -->
+                <RowDefinition Height="*"/>
+                <!-- App Content Row -->
+            </Grid.RowDefinitions>
+
+            <!-- Custom Dark Title Bar -->
+            <Grid Grid.Row="0" Background="#15151C" MouseLeftButtonDown="TopBar_MouseDown">
+
+                <TextBlock Text="ChatApp" Foreground="#888888" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center" Margin="15,0,0,0"/>
+
+                <!-- Close Button -->
+                <Button Content="✕" HorizontalAlignment="Right" Width="45" Background="Transparent" Foreground="#A0A0A0" BorderThickness="0" Cursor="Hand" Click="CloseApp_Click">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="BtnBorder" Background="Transparent">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="BtnBorder" Property="Background" Value="#E81123"/>
+                                    <Setter Property="Foreground" Value="White"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+            </Grid>
+
+            <!-- Your App Content -->
+            <ContentControl Grid.Row="1" Content="{Binding CurrentView}"/>
+
+        </Grid>
+    </Border>
 </Window>

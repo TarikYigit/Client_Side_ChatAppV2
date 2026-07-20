@@ -48,234 +48,280 @@
             </LinearGradientBrush>
         </Grid.Background>
 
+        <Rectangle IsHitTestVisible="False" Opacity="0.07">
+            <Rectangle.Fill>
+                <!-- TileMode="Tile" mathematically repeats this spatial shape infinitely -->
+                <DrawingBrush Viewport="0,0,30,30" ViewportUnits="Absolute" TileMode="Tile">
+                    <DrawingBrush.Drawing>
+                        <GeometryDrawing>
+                            <GeometryDrawing.Pen>
+                                <Pen Brush="#FFFFFF" Thickness="1.5"/>
+                            </GeometryDrawing.Pen>
+                            <GeometryDrawing.Geometry>
+                                <!-- Defines a single square of the mesh -->
+                                <RectangleGeometry Rect="0,0,30,30"/>
+                            </GeometryDrawing.Geometry>
+                        </GeometryDrawing>
+                    </DrawingBrush.Drawing>
+                </DrawingBrush>
+            </Rectangle.Fill>
+        </Rectangle>
+
         <Border Background="#1E1E24" CornerRadius="15" Margin="20">
             <Border.Effect>
                 <DropShadowEffect BlurRadius="25" ShadowDepth="8" Opacity="0.4" Color="Black"/>
             </Border.Effect>
 
-            <Grid Margin="15">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
+            <!-- NEW WRAPPER GRID -->
+            <Grid>
 
-                <!-- Header -->
-                <Grid Grid.Row="0" Margin="0,0,0,15">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
+                <!-- THE INNER CHAT PATTERN -->
+                <Border CornerRadius="15" IsHitTestVisible="False" Opacity="0.03">
+                    <Border.Background>
+                        <DrawingBrush TileMode="Tile" Viewport="0,0,40,40" ViewportUnits="Absolute">
+                            <DrawingBrush.Transform>
+                                <RotateTransform Angle="45"/>
+                            </DrawingBrush.Transform>
+                            <DrawingBrush.Drawing>
+                                <GeometryDrawing>
+                                    <GeometryDrawing.Pen>
+                                        <Pen Brush="#FFFFFF" Thickness="0.75"/>
+                                    </GeometryDrawing.Pen>
+                                    <GeometryDrawing.Geometry>
+                                        <!-- Draws a clean, high-tech crosshair/plus symbol -->
+                                        <GeometryGroup>
+                                            <LineGeometry StartPoint="20,15" EndPoint="20,25"/>
+                                            <LineGeometry StartPoint="15,20" EndPoint="25,20"/>
+                                        </GeometryGroup>
+                                    </GeometryDrawing.Geometry>
+                                </GeometryDrawing>
+                            </DrawingBrush.Drawing>
+                        </DrawingBrush>
+                    </Border.Background>
+                </Border>
 
-                    <Button Grid.Column="0" Command="{Binding BackCommand}" Cursor="Hand">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border x:Name="BtnBorder" Background="#2A2A35" CornerRadius="6" Padding="15,8">
-                                    <TextBlock Text="Back" Foreground="White" FontSize="13" FontWeight="Bold"/>
-                                </Border>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="BtnBorder" Property="Background" Value="#3A3A45"/>
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
-                            </ControlTemplate>
-                        </Button.Template>
-                    </Button>
+                <!-- YOUR EXISTING CHAT UI -->
+                <Grid Margin="15">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Column="1" Text="{Binding HeaderText}" Foreground="White" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" Margin="15,0,0,0"/>
+                    <!-- Header -->
+                    <Grid Grid.Row="0" Margin="0,0,0,15">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
 
-                    <Button Grid.Column="2" Command="{Binding AddUserToGroupCommand}" Margin="0,0,10,0" Cursor="Hand">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border x:Name="BtnBorder" Background="#17A2B8" CornerRadius="6" Padding="15,8">
-                                    <TextBlock Text="Add User" Foreground="White" FontSize="13" FontWeight="Bold"/>
-                                </Border>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="BtnBorder" Property="Background" Value="#138496"/>
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
-                            </ControlTemplate>
-                        </Button.Template>
-                    </Button>
+                        <Button Grid.Column="0" Command="{Binding BackCommand}" Cursor="Hand">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="BtnBorder" Background="#2A2A35" CornerRadius="6" Padding="15,8">
+                                        <TextBlock Text="Back" Foreground="White" FontSize="13" FontWeight="Bold"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="BtnBorder" Property="Background" Value="#3A3A45"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
 
-                    <Button Grid.Column="3" Command="{Binding LeaveGroupCommand}" Cursor="Hand">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border x:Name="BtnBorder" Background="#DC3545" CornerRadius="6" Padding="15,8">
-                                    <TextBlock Text="Leave Group" Foreground="White" FontSize="13" FontWeight="Bold"/>
-                                </Border>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="BtnBorder" Property="Background" Value="#C82333"/>
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
-                            </ControlTemplate>
-                        </Button.Template>
-                    </Button>
-                </Grid>
+                        <TextBlock Grid.Column="1" Text="{Binding HeaderText}" Foreground="White" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" Margin="15,0,0,0"/>
 
-                <!-- Chat History -->
-                <ListBox Grid.Row="1" ItemsSource="{Binding Messages}" 
-                         helpers:AutoScrollHelper.AutoScroll="True" 
-                         Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                    <ListBox.ItemContainerStyle>
-                        <Style TargetType="ListBoxItem">
-                            <Setter Property="Focusable" Value="False"/>
-                            <Setter Property="Background" Value="Transparent"/>
-                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="ListBoxItem">
-                                        <ContentPresenter/>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </ListBox.ItemContainerStyle>
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <Grid Margin="5,5,5,10">
+                        <Button Grid.Column="2" Command="{Binding AddUserToGroupCommand}" Margin="0,0,10,0" Cursor="Hand">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="BtnBorder" Background="#17A2B8" CornerRadius="6" Padding="15,8">
+                                        <TextBlock Text="Add User" Foreground="White" FontSize="13" FontWeight="Bold"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="BtnBorder" Property="Background" Value="#138496"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
 
-                                <Border x:Name="BubbleBorder" CornerRadius="12,12,12,0" Padding="12" MaxWidth="400" HorizontalAlignment="Left" Background="#2A2A35"
-                                        Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=ListBox}}">
+                        <Button Grid.Column="3" Command="{Binding LeaveGroupCommand}" Cursor="Hand">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="BtnBorder" Background="#DC3545" CornerRadius="6" Padding="15,8">
+                                        <TextBlock Text="Leave Group" Foreground="White" FontSize="13" FontWeight="Bold"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="BtnBorder" Property="Background" Value="#C82333"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </Grid>
 
-                                    <Border.ContextMenu>
-                                        <ContextMenu>
-                                            <MenuItem Header="Edit Message" 
-                                                      Command="{Binding PlacementTarget.Tag.BeginEditCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
-                                                      CommandParameter="{Binding}"/>
-                                            <MenuItem Header="Delete Message" Command="{Binding PlacementTarget.Tag.DeleteMessageCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}">
-                                                <MenuItem.Style>
-                                                    <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
-                                                        <Style.Triggers>
-                                                            <Trigger Property="IsMouseOver" Value="True">
-                                                                <Setter Property="Foreground" Value="#FF4C4C"/>
-                                                            </Trigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </MenuItem.Style>
-                                            </MenuItem>
-                                        </ContextMenu>
-                                    </Border.ContextMenu>
+                    <!-- Chat History -->
+                    <ListBox Grid.Row="1" ItemsSource="{Binding Messages}" 
+                             helpers:AutoScrollHelper.AutoScroll="True" 
+                             Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="Focusable" Value="False"/>
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListBoxItem">
+                                            <ContentPresenter/>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="5,5,5,10">
 
-                                    <StackPanel>
-                                        <!-- Header Row (Sender, Time, Edited flag) -->
-                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                                            <TextBlock x:Name="SenderText" Text="{Binding Sender}" FontWeight="Bold" FontSize="13" Foreground="#4DB8FF"/>
-                                            <TextBlock x:Name="TimeText" Text="{Binding Timestamp}" FontSize="11" Foreground="#A0A0A0" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                    <Border x:Name="BubbleBorder" CornerRadius="12,12,12,0" Padding="12" MaxWidth="400" HorizontalAlignment="Left" Background="#2A2A35"
+                                            Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=ListBox}}">
 
-                                            <TextBlock Text="(edited)" FontSize="10" FontStyle="Italic" Foreground="#888888" Margin="6,0,0,0" VerticalAlignment="Center">
-                                                <TextBlock.Style>
-                                                    <Style TargetType="TextBlock">
-                                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsEdited}" Value="True">
-                                                                <Setter Property="Visibility" Value="Visible"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
+                                        <Border.ContextMenu>
+                                            <ContextMenu>
+                                                <MenuItem Header="Edit Message" 
+                                                          Command="{Binding PlacementTarget.Tag.BeginEditCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
+                                                          CommandParameter="{Binding}"/>
+                                                <MenuItem Header="Delete Message" Command="{Binding PlacementTarget.Tag.DeleteMessageCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}">
+                                                    <MenuItem.Style>
+                                                        <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
+                                                            <Style.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter Property="Foreground" Value="#FF4C4C"/>
+                                                                </Trigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </MenuItem.Style>
+                                                </MenuItem>
+                                            </ContextMenu>
+                                        </Border.ContextMenu>
 
-                                            <TextBlock x:Name="TickText" FontSize="11" Margin="6,0,0,0" VerticalAlignment="Center" FontWeight="Bold" Visibility="Collapsed">
-                                                <TextBlock.Style>
-                                                    <Style TargetType="TextBlock">
-                                                        <Setter Property="Text" Value="✓"/>
-                                                        <Setter Property="Foreground" Value="#D9EBFF"/>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsSent}" Value="True">
-                                                                <Setter Property="Text" Value="✓✓"/>
-                                                            </DataTrigger>
-                                                            <DataTrigger Binding="{Binding IsSeen}" Value="True">
-                                                                <Setter Property="Text" Value="✓✓"/>
-                                                                <Setter Property="Foreground" Value="#000000"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
+                                        <StackPanel>
+                                            <!-- Header Row (Sender, Time, Edited flag) -->
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                                                <TextBlock x:Name="SenderText" Text="{Binding Sender}" FontWeight="Bold" FontSize="13" Foreground="#4DB8FF"/>
+                                                <TextBlock x:Name="TimeText" Text="{Binding Timestamp}" FontSize="11" Foreground="#A0A0A0" Margin="10,0,0,0" VerticalAlignment="Center"/>
+
+                                                <TextBlock Text="(edited)" FontSize="10" FontStyle="Italic" Foreground="#888888" Margin="6,0,0,0" VerticalAlignment="Center">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsEdited}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+
+                                                <TextBlock x:Name="TickText" FontSize="11" Margin="6,0,0,0" VerticalAlignment="Center" FontWeight="Bold" Visibility="Collapsed">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Text" Value="✓"/>
+                                                            <Setter Property="Foreground" Value="#D9EBFF"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsSent}" Value="True">
+                                                                    <Setter Property="Text" Value="✓✓"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding IsSeen}" Value="True">
+                                                                    <Setter Property="Text" Value="✓✓"/>
+                                                                    <Setter Property="Foreground" Value="#000000"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </StackPanel>
+
+                                            <!-- Message Content Row -->
+                                            <Image Source="{Binding ImagePath}" Visibility="{Binding HasImage, Converter={StaticResource BoolToVis}}" MaxWidth="250" MaxHeight="250" Margin="0,0,0,5" Stretch="Uniform" HorizontalAlignment="Left"/>
+
+                                            <TextBlock x:Name="ContentText" Text="{Binding DisplayContent}" FontSize="15" Foreground="White" TextWrapping="Wrap"/>
                                         </StackPanel>
+                                    </Border>
+                                </Grid>
 
-                                        <!-- Message Content Row (Properly placed below the header) -->
-                                        <Image Source="{Binding ImagePath}" Visibility="{Binding HasImage, Converter={StaticResource BoolToVis}}" MaxWidth="250" MaxHeight="250" Margin="0,0,0,5" Stretch="Uniform" HorizontalAlignment="Left"/>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding IsMyMessage}" Value="True">
+                                        <Setter TargetName="BubbleBorder" Property="HorizontalAlignment" Value="Right"/>
+                                        <Setter TargetName="BubbleBorder" Property="Background" Value="#0078D7"/>
+                                        <Setter TargetName="BubbleBorder" Property="CornerRadius" Value="12,12,0,12"/>
+                                        <Setter TargetName="SenderText" Property="Visibility" Value="Collapsed"/>
+                                        <Setter TargetName="TickText" Property="Visibility" Value="Visible"/>
+                                        <Setter TargetName="TimeText" Property="Foreground" Value="#D9EBFF"/>
+                                    </DataTrigger>
 
-                                        <TextBlock x:Name="ContentText" Text="{Binding DisplayContent}" FontSize="15" Foreground="White" TextWrapping="Wrap"/>
-                                    </StackPanel>
-                                </Border>
-                            </Grid>
+                                    <DataTrigger Binding="{Binding Content}" Value="[This message was deleted]">
+                                        <Setter TargetName="ContentText" Property="FontStyle" Value="Italic"/>
+                                        <Setter TargetName="ContentText" Property="Foreground" Value="#A0A0A0"/>
+                                        <Setter TargetName="BubbleBorder" Property="ContextMenu" Value="{x:Null}"/>
+                                        <Setter TargetName="TickText" Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
 
-                            <DataTemplate.Triggers>
-                                <DataTrigger Binding="{Binding IsMyMessage}" Value="True">
-                                    <Setter TargetName="BubbleBorder" Property="HorizontalAlignment" Value="Right"/>
-                                    <Setter TargetName="BubbleBorder" Property="Background" Value="#0078D7"/>
-                                    <Setter TargetName="BubbleBorder" Property="CornerRadius" Value="12,12,0,12"/>
-                                    <Setter TargetName="SenderText" Property="Visibility" Value="Collapsed"/>
-                                    <Setter TargetName="TickText" Property="Visibility" Value="Visible"/>
-                                    <Setter TargetName="TimeText" Property="Foreground" Value="#D9EBFF"/>
-                                </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsMyMessage}" Value="False">
+                                        <Setter TargetName="BubbleBorder" Property="ContextMenu" Value="{x:Null}"/>
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
 
-                                <DataTrigger Binding="{Binding Content}" Value="[This message was deleted]">
-                                    <Setter TargetName="ContentText" Property="FontStyle" Value="Italic"/>
-                                    <Setter TargetName="ContentText" Property="Foreground" Value="#A0A0A0"/>
-                                    <Setter TargetName="BubbleBorder" Property="ContextMenu" Value="{x:Null}"/>
-                                    <Setter TargetName="TickText" Property="Visibility" Value="Collapsed"/>
-                                </DataTrigger>
+                    <!-- Input Area -->
+                    <Grid Grid.Row="2" Margin="0,10,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="90"/>
+                        </Grid.ColumnDefinitions>
 
-                                <DataTrigger Binding="{Binding IsMyMessage}" Value="False">
-                                    <Setter TargetName="BubbleBorder" Property="ContextMenu" Value="{x:Null}"/>
-                                </DataTrigger>
-                            </DataTemplate.Triggers>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
+                        <Button Grid.Column="0" Command="{Binding AttachImageCommand}" Margin="0,0,10,0" Width="45" Cursor="Hand" ToolTip="Attach Image">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="BtnBorder" Background="#2A2A35" CornerRadius="8">
+                                        <TextBlock Text="+" Foreground="White" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-2,0,0"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="BtnBorder" Property="Background" Value="#3A3A45"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
 
-                <!-- Input Area -->
-                <Grid Grid.Row="2" Margin="0,10,0,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <!-- NEW: Column for the attachment button -->
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="90"/>
-                    </Grid.ColumnDefinitions>
+                        <Border Grid.Column="1" Background="#2A2A35" CornerRadius="8" Padding="12,10">
+                            <TextBox Text="{Binding InputText, UpdateSourceTrigger=PropertyChanged}" Foreground="White" Background="Transparent" BorderThickness="0" CaretBrush="White" FontSize="15"/>
+                        </Border>
 
-                    <!-- NEW: Attachment Button -->
-                    <Button Grid.Column="0" Command="{Binding AttachImageCommand}" Margin="0,0,10,0" Width="45" Cursor="Hand" ToolTip="Attach Image">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border x:Name="BtnBorder" Background="#2A2A35" CornerRadius="8">
-                                    <!-- A simple plus icon for now -->
-                                    <TextBlock Text="+" Foreground="White" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-2,0,0"/>
-                                </Border>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="BtnBorder" Property="Background" Value="#3A3A45"/>
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
-                            </ControlTemplate>
-                        </Button.Template>
-                    </Button>
-
-                    <Border Grid.Column="1" Background="#2A2A35" CornerRadius="8" Padding="12,10">
-                        <TextBox Text="{Binding InputText, UpdateSourceTrigger=PropertyChanged}" Foreground="White" Background="Transparent" BorderThickness="0" CaretBrush="White" FontSize="15"/>
-                    </Border>
-
-                    <Button Grid.Column="2" Command="{Binding SendCommand}" Margin="10,0,0,0" Cursor="Hand">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border x:Name="BtnBorder" Background="#0078D7" CornerRadius="8">
-                                    <TextBlock Text="Send" Foreground="White" FontSize="15" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="BtnBorder" Property="Background" Value="#005A9E"/>
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
-                            </ControlTemplate>
-                        </Button.Template>
-                    </Button>
+                        <Button Grid.Column="2" Command="{Binding SendCommand}" Margin="10,0,0,0" Cursor="Hand">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="BtnBorder" Background="#0078D7" CornerRadius="8">
+                                        <TextBlock Text="Send" Foreground="White" FontSize="15" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="BtnBorder" Property="Background" Value="#005A9E"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </Grid>
                 </Grid>
             </Grid>
         </Border>

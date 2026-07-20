@@ -14,16 +14,22 @@
     </UserControl.Resources>
 
     <Grid>
-        <!-- Sleek Gradient Background -->
+        <!-- The Glowing Under-Light matched to your image -->
         <Grid.Background>
             <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                <GradientStop Color="#0f2027" Offset="0.0"/>
-                <GradientStop Color="#203a43" Offset="0.5"/>
-                <GradientStop Color="#2c5364" Offset="1.0"/>
+                <GradientStop Color="#FF6B00" Offset="0.0"/>
+                <!-- Vibrant Orange -->
+                <GradientStop Color="#00FFFF" Offset="0.5"/>
+                <!-- Neon Cyan -->
+                <GradientStop Color="#8A2BE2" Offset="1.0"/>
+                <!-- Deep Purple -->
             </LinearGradientBrush>
         </Grid.Background>
 
-        <!-- Floating Login Card -->
+        <!-- The Tile System target -->
+        <UniformGrid x:Name="TileGrid" Background="Transparent" />
+
+        <!-- Your existing Login Card goes directly below this -->
         <Border Width="350" Height="450" Background="#1E1E24" CornerRadius="15" HorizontalAlignment="Center" VerticalAlignment="Center">
 
             <!-- Smooth Drop Shadow -->
