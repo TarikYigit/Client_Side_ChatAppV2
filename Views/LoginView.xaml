@@ -30,7 +30,7 @@
         <UniformGrid x:Name="TileGrid" Background="Transparent" />
 
         <!-- Your existing Login Card goes directly below this -->
-        <Border Width="350" Height="450" Background="#1E1E24" CornerRadius="15" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <Border Width="350" Height="472" Background="#1E1E24" CornerRadius="15" HorizontalAlignment="Center" VerticalAlignment="Center">
 
             <!-- Smooth Drop Shadow -->
             <Border.Effect>
@@ -40,7 +40,7 @@
             <StackPanel Margin="35">
 
                 <!-- App Logo / Title -->
-                <TextBlock Text="ChatApp" Foreground="White" FontSize="28" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,15,0,5"/>
+                <TextBlock Text="BIZMUTH" Foreground="White" FontSize="36" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,15,0,5"/>
                 <TextBlock Text="Connect with your team" Foreground="#888888" FontSize="14" HorizontalAlignment="Center" Margin="0,0,0,35"/>
 
                 <!-- Username Input -->

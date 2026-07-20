@@ -45,27 +45,30 @@
             </Grid.RowDefinitions>
 
             <!-- Custom Dark Title Bar -->
-            <Grid Grid.Row="0" Background="#15151C" MouseLeftButtonDown="TopBar_MouseDown">
+            <Border Grid.Row="0" Background="#15151C" CornerRadius="11,11,0,0" MouseLeftButtonDown="TopBar_MouseDown">
+                <Grid>
 
-                <TextBlock Text="ChatApp" Foreground="#888888" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center" Margin="15,0,0,0"/>
+                    <!-- THE NEW NAME -->
+                    <TextBlock Text="Bizmuth" Foreground="#888888" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center" Margin="15,0,0,0"/>
 
-                <!-- Close Button -->
-                <Button Content="✕" HorizontalAlignment="Right" Width="45" Background="Transparent" Foreground="#A0A0A0" BorderThickness="0" Cursor="Hand" Click="CloseApp_Click">
-                    <Button.Template>
-                        <ControlTemplate TargetType="Button">
-                            <Border x:Name="BtnBorder" Background="Transparent">
-                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="BtnBorder" Property="Background" Value="#E81123"/>
-                                    <Setter Property="Foreground" Value="White"/>
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Button.Template>
-                </Button>
-            </Grid>
+                    <!-- Close Button -->
+                    <Button Content="✕" HorizontalAlignment="Right" Width="45" Background="Transparent" Foreground="#A0A0A0" BorderThickness="0" Cursor="Hand" Click="CloseApp_Click">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="BtnBorder" Background="Transparent" CornerRadius="0,11,0,0">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="BtnBorder" Property="Background" Value="#E81123"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </Grid>
+            </Border>
 
             <!-- Your App Content -->
             <ContentControl Grid.Row="1" Content="{Binding CurrentView}"/>
